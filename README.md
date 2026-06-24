@@ -6,7 +6,7 @@ A fully self-contained, browser-based Family Feud game built in a single HTML fi
 
 ## Getting Started
 
-1. Download `family_feud_custom.html`
+1. Download `Family Feud Custom.html`
 2. Open it in any modern browser
 3. Read the rules, edit your questions, and play
 
