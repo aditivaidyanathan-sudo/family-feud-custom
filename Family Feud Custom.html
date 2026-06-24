@@ -1,0 +1,1728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Family Feud — Custom Edition</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy: #0a1628;
+  --navy2: #0f2040;
+  --board: #0d1f3c;
+  --gold: #f5c842;
+  --gold2: #e8a800;
+  --red: #c8292e;
+  --red2: #a01f24;
+  --white: #ffffff;
+  --tile-hidden: #1a3560;
+  --tile-border: #2a4a80;
+  --tile-reveal: #1040a0;
+  --tile-reveal-border: #f5c842;
+  --text-dim: rgba(255,255,255,0.5);
+  --green: #1d9e75;
+  --green2: #4ade80;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--navy); font-family: 'Barlow', sans-serif; color: var(--white); min-height: 100vh; overflow-x: hidden; }
+body::before { content:''; position:fixed; inset:0; background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.03) 2px,rgba(0,0,0,0.03) 4px); pointer-events:none; z-index:1000; }
+.screen { display:none; min-height:100vh; }
+.screen.active { display:flex; flex-direction:column; }
+
+/* ── SETUP ── */
+#s-setup { align-items:center; justify-content:flex-start; padding:2rem 1rem; overflow-y:auto; }
+.setup-logo { font-family:'Bebas Neue',sans-serif; font-size:clamp(40px,7vw,88px); color:var(--gold); text-align:center; letter-spacing:4px; line-height:1; margin-bottom:4px; text-shadow:4px 4px 0 var(--gold2); }
+.setup-sub { font-family:'Barlow Condensed',sans-serif; font-size:15px; color:var(--text-dim); text-align:center; letter-spacing:3px; text-transform:uppercase; margin-bottom:1.5rem; }
+.setup-box { background:var(--navy2); border:1px solid rgba(245,200,66,.2); border-radius:12px; padding:1.5rem; width:100%; max-width:620px; margin-bottom:1rem; }
+.setup-box h2 { font-family:'Barlow Condensed',sans-serif; font-size:12px; letter-spacing:3px; text-transform:uppercase; color:var(--gold); margin-bottom:1rem; }
+.setup-row { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+
+/* Team count stepper */
+.stepper { display:flex; align-items:center; gap:12px; }
+.step-btn { width:36px; height:36px; border-radius:8px; border:1px solid rgba(255,255,255,.2); background:transparent; color:var(--white); font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .15s; font-family:'Bebas Neue',sans-serif; }
+.step-btn:hover { background:rgba(255,255,255,.1); border-color:var(--gold); }
+.step-val { font-family:'Bebas Neue',sans-serif; font-size:32px; color:var(--gold); min-width:28px; text-align:center; }
+.step-label { font-size:13px; color:var(--text-dim); }
+
+/* Team config rows */
+.team-config-row { display:flex; align-items:center; gap:10px; margin-bottom:8px; padding:10px 12px; background:rgba(255,255,255,.04); border-radius:8px; border:1px solid rgba(255,255,255,.07); }
+.color-dot-btn { width:22px; height:22px; border-radius:50%; border:2px solid rgba(255,255,255,.3); cursor:pointer; flex-shrink:0; transition:transform .15s; }
+.color-dot-btn:hover { transform:scale(1.2); }
+.color-picker-wrap { position:relative; }
+.color-picker-popup { display:none; position:absolute; left:0; top:30px; background:var(--navy2); border:1px solid rgba(245,200,66,.3); border-radius:8px; padding:8px; z-index:200; flex-wrap:wrap; gap:6px; width:168px; box-shadow:0 8px 24px rgba(0,0,0,.5); }
+.color-picker-popup.open { display:flex; }
+.color-swatch { width:22px; height:22px; border-radius:50%; cursor:pointer; border:2px solid transparent; transition:all .15s; }
+.color-swatch:hover, .color-swatch.selected { border-color:var(--white); transform:scale(1.15); }
+.team-name-inp { flex:1; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12); border-radius:8px; padding:9px 12px; color:var(--white); font-family:'Barlow',sans-serif; font-size:14px; outline:none; transition:border-color .2s; }
+.team-name-inp:focus { border-color:var(--gold); }
+.team-name-inp::placeholder { color:rgba(255,255,255,.3); }
+.team-size-inp { width:64px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12); border-radius:8px; padding:9px 10px; color:var(--white); font-family:'Barlow',sans-serif; font-size:14px; outline:none; text-align:center; transition:border-color .2s; }
+.team-size-inp:focus { border-color:var(--gold); }
+.team-size-label { font-family:'Barlow Condensed',sans-serif; font-size:11px; letter-spacing:1px; color:var(--text-dim); text-transform:uppercase; white-space:nowrap; }
+
+/* Cutoff banner */
+.cutoff-banner { display:flex; align-items:center; gap:10px; background:rgba(245,200,66,.08); border:1px solid rgba(245,200,66,.25); border-radius:8px; padding:10px 14px; }
+.cutoff-icon { font-size:20px; }
+.cutoff-text { font-size:13px; color:rgba(255,255,255,.8); flex:1; }
+.cutoff-text strong { color:var(--gold); }
+
+.start-btn { background:var(--gold); color:var(--navy); border:none; border-radius:10px; padding:16px 48px; font-family:'Bebas Neue',sans-serif; font-size:26px; letter-spacing:3px; cursor:pointer; transition:transform .15s,background .15s; width:100%; max-width:620px; margin-top:.5rem; }
+.start-btn:hover { background:#ffe060; transform:scale(1.02); }
+
+/* ── GAME ── */
+#s-game { flex-direction:column; min-height:100vh; }
+.game-top { display:flex; align-items:stretch; padding:14px 20px 0; flex-shrink:0; gap:0; }
+.team-panel { flex:1; background:var(--navy2); border-radius:10px 10px 0 0; padding:10px 12px; text-align:center; border:1px solid rgba(255,255,255,.08); border-bottom:none; min-width:0; }
+.team-panel.playing { border-color:var(--gold); background:rgba(245,200,66,.08); }
+.team-panel.qualified-panel { position:relative; }
+.team-label { font-family:'Barlow Condensed',sans-serif; font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--text-dim); }
+.team-name-display { font-family:'Bebas Neue',sans-serif; font-size:clamp(13px,1.8vw,22px); color:var(--white); letter-spacing:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.team-score-display { font-family:'Bebas Neue',sans-serif; font-size:clamp(22px,3vw,42px); color:var(--gold); line-height:1; }
+.team-size-badge { font-family:'Barlow Condensed',sans-serif; font-size:10px; color:var(--text-dim); letter-spacing:1px; }
+.qualified-badge { display:inline-block; background:var(--gold); color:var(--navy); font-family:'Bebas Neue',sans-serif; font-size:10px; letter-spacing:2px; padding:1px 7px; border-radius:10px; margin-top:2px; }
+.center-panel { flex:0 0 140px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:4px 12px; gap:2px; }
+.round-badge { font-family:'Bebas Neue',sans-serif; font-size:11px; letter-spacing:3px; color:var(--text-dim); text-transform:uppercase; }
+.round-number { font-family:'Bebas Neue',sans-serif; font-size:34px; color:var(--gold); line-height:1; }
+.mult-pill { background:var(--gold); color:var(--navy); font-family:'Bebas Neue',sans-serif; font-size:12px; letter-spacing:2px; padding:2px 10px; border-radius:20px; display:none; }
+
+/* Board */
+.board-wrap { background:var(--board); margin:0 20px; border:1px solid rgba(245,200,66,.2); border-top:none; border-radius:0 0 12px 12px; padding:12px 16px 16px; flex-shrink:0; }
+.board-category { font-family:'Barlow Condensed',sans-serif; font-size:11px; letter-spacing:4px; text-transform:uppercase; color:var(--gold); text-align:center; margin-bottom:5px; opacity:.8; }
+.board-question { font-family:'Bebas Neue',sans-serif; font-size:clamp(18px,2.5vw,34px); text-align:center; color:var(--white); letter-spacing:1px; margin-bottom:12px; line-height:1.15; }
+.tiles-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+.tile { background:var(--tile-hidden); border:2px solid var(--tile-border); border-radius:8px; min-height:54px; display:flex; align-items:center; justify-content:center; cursor:pointer; overflow:hidden; perspective:600px; transition:border-color .2s; }
+.tile:hover { border-color:rgba(245,200,66,.5); }
+.tile-inner { width:100%; position:relative; transform-style:preserve-3d; transition:transform 0.55s cubic-bezier(.4,0,.2,1); min-height:54px; display:flex; align-items:stretch; }
+.tile.flipped .tile-inner { transform:rotateY(180deg); }
+.tile-front,.tile-back { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; backface-visibility:hidden; -webkit-backface-visibility:hidden; padding:8px 12px; border-radius:6px; }
+.tile-front { background:var(--tile-hidden); }
+.tile-num-hidden { font-family:'Bebas Neue',sans-serif; font-size:24px; color:var(--tile-border); }
+.tile-back { background:var(--tile-reveal); border:2px solid var(--tile-reveal-border); border-radius:6px; transform:rotateY(180deg); flex-direction:row; gap:8px; justify-content:space-between; }
+.tile-num-reveal { font-family:'Bebas Neue',sans-serif; font-size:16px; color:var(--gold); min-width:16px; flex-shrink:0; }
+.tile-text { font-family:'Barlow Condensed',sans-serif; font-size:clamp(12px,1.4vw,16px); font-weight:600; color:var(--white); flex:1; text-align:left; line-height:1.2; }
+.tile-pts { font-family:'Bebas Neue',sans-serif; font-size:18px; color:var(--gold); flex-shrink:0; }
+
+/* Strikes */
+.strikes-row { display:flex; align-items:center; justify-content:center; gap:10px; padding:8px 20px; flex-shrink:0; }
+.strike-x { width:38px; height:38px; border-radius:50%; border:2px solid rgba(255,255,255,.15); display:flex; align-items:center; justify-content:center; font-family:'Bebas Neue',sans-serif; font-size:17px; color:rgba(255,255,255,.15); transition:all .3s; }
+.strike-x.active { background:var(--red); border-color:var(--red2); color:var(--white); animation:strikeIn .3s ease; }
+@keyframes strikeIn { 0%{transform:scale(1.5)} 100%{transform:scale(1)} }
+.round-pts-display { font-family:'Bebas Neue',sans-serif; font-size:24px; color:var(--green2); letter-spacing:2px; margin:0 12px; }
+
+/* Scores strip */
+.scores-strip { display:flex; gap:6px; padding:0 20px 8px; flex-shrink:0; flex-wrap:wrap; }
+.score-chip { flex:1; min-width:80px; background:var(--navy2); border:1px solid rgba(255,255,255,.08); border-radius:8px; padding:6px 10px; display:flex; align-items:center; gap:6px; position:relative; transition:border-color .3s; }
+.score-chip.playing { border-color:rgba(245,200,66,.4); }
+.score-chip.qualified { border-color:var(--gold); background:rgba(245,200,66,.07); }
+.score-chip.top-qualifier { border-color:var(--gold); background:rgba(245,200,66,.12); box-shadow:0 0 12px rgba(245,200,66,.2); }
+.chip-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.chip-name { font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:600; flex:1; color:var(--white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.chip-score { font-family:'Bebas Neue',sans-serif; font-size:17px; color:var(--gold); }
+.chip-q-badge { font-family:'Bebas Neue',sans-serif; font-size:9px; letter-spacing:1px; background:var(--gold); color:var(--navy); padding:1px 5px; border-radius:6px; flex-shrink:0; }
+.chip-award { background:transparent; border:1px solid rgba(255,255,255,.2); border-radius:5px; padding:2px 7px; font-family:'Barlow Condensed',sans-serif; font-size:10px; letter-spacing:1px; text-transform:uppercase; color:var(--white); cursor:pointer; transition:all .15s; flex-shrink:0; }
+.chip-award:hover { background:rgba(255,255,255,.1); }
+.chip-award.awarded { background:#166534; border-color:var(--green2); color:var(--green2); }
+
+/* Qualification bar */
+.qual-bar-wrap { padding:0 20px 6px; flex-shrink:0; }
+.qual-bar-inner { background:var(--navy2); border:1px solid rgba(245,200,66,.15); border-radius:8px; padding:6px 14px; display:flex; align-items:center; gap:10px; }
+.qual-bar-label { font-family:'Barlow Condensed',sans-serif; font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--gold); white-space:nowrap; }
+.qual-bar-track { flex:1; height:6px; background:rgba(255,255,255,.08); border-radius:3px; overflow:visible; position:relative; }
+.qual-bar-fill { height:100%; border-radius:3px; background:linear-gradient(90deg,var(--green),var(--gold)); transition:width .5s ease; }
+.qual-bar-line { position:absolute; right:0; top:-4px; width:2px; height:14px; background:var(--gold); border-radius:1px; }
+.qual-bar-val { font-family:'Bebas Neue',sans-serif; font-size:14px; color:var(--gold); white-space:nowrap; }
+
+/* Controls */
+.controls-bar { display:flex; gap:6px; padding:0 20px 8px; flex-shrink:0; flex-wrap:wrap; }
+.ctrl { flex:1; min-width:80px; padding:9px 10px; border-radius:8px; border:1px solid rgba(255,255,255,.15); background:transparent; color:var(--white); font-family:'Barlow Condensed',sans-serif; font-size:13px; font-weight:600; letter-spacing:1px; text-transform:uppercase; cursor:pointer; transition:all .15s; text-align:center; }
+.ctrl:hover { background:rgba(255,255,255,.08); }
+.ctrl.red { border-color:var(--red); color:#ff6b6b; }
+.ctrl.red:hover { background:rgba(200,41,46,.15); }
+.ctrl.green { border-color:#166534; color:var(--green2); }
+.ctrl.green:hover { background:rgba(22,101,52,.2); }
+.ctrl.gold { border-color:var(--gold2); color:var(--gold); }
+.ctrl.gold:hover { background:rgba(245,200,66,.1); }
+.ctrl.primary { background:var(--gold); color:var(--navy); border-color:var(--gold); font-size:14px; }
+.ctrl.primary:hover { background:#ffe060; }
+
+/* Steal */
+.steal-overlay { display:none; background:rgba(10,22,40,.95); border:2px solid var(--gold); border-radius:12px; padding:12px 16px; margin:0 20px 8px; }
+.steal-overlay.on { display:block; }
+.steal-title { font-family:'Bebas Neue',sans-serif; font-size:19px; color:var(--gold); letter-spacing:2px; margin-bottom:8px; text-align:center; }
+.steal-teams { display:grid; grid-template-columns:repeat(auto-fill,minmax(110px,1fr)); gap:5px; }
+.steal-team-btn { display:flex; align-items:center; gap:7px; padding:7px 10px; background:var(--navy2); border:1px solid rgba(255,255,255,.15); border-radius:7px; color:var(--white); font-family:'Barlow Condensed',sans-serif; font-size:13px; font-weight:600; cursor:pointer; transition:all .15s; }
+.steal-team-btn:hover { border-color:var(--gold); background:rgba(245,200,66,.08); }
+
+/* ── ROUNDS LIST ── */
+#s-rounds { padding:1.5rem; align-items:flex-start; }
+.rounds-title { font-family:'Bebas Neue',sans-serif; font-size:34px; color:var(--gold); letter-spacing:3px; margin-bottom:1rem; }
+.rounds-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:7px; width:100%; margin-bottom:1rem; }
+.round-card { background:var(--navy2); border:1px solid rgba(255,255,255,.08); border-radius:8px; padding:10px 14px; cursor:pointer; display:flex; align-items:center; gap:10px; transition:all .15s; }
+.round-card:hover { border-color:rgba(245,200,66,.4); background:rgba(245,200,66,.05); }
+.round-card.done { opacity:.45; }
+.round-card.current { border-color:var(--gold); }
+.rc-num { font-family:'Bebas Neue',sans-serif; font-size:20px; color:var(--text-dim); min-width:24px; }
+.rc-info { flex:1; }
+.rc-cat { font-family:'Barlow Condensed',sans-serif; font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--gold); opacity:.7; }
+.rc-q { font-size:12px; color:var(--white); line-height:1.3; margin-top:1px; }
+.rc-badge { font-family:'Bebas Neue',sans-serif; font-size:11px; background:var(--gold); color:var(--navy); padding:2px 7px; border-radius:10px; letter-spacing:1px; flex-shrink:0; }
+.rc-fm { font-family:'Bebas Neue',sans-serif; font-size:11px; background:var(--red); color:var(--white); padding:2px 7px; border-radius:10px; letter-spacing:1px; flex-shrink:0; }
+
+/* ── FAST MONEY ── */
+#s-fastmoney { flex-direction:column; min-height:100vh; }
+.fm-header { background:var(--red); padding:14px 20px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+.fm-title { font-family:'Bebas Neue',sans-serif; font-size:clamp(22px,4vw,44px); color:var(--white); letter-spacing:3px; }
+.fm-timer { font-family:'Bebas Neue',sans-serif; font-size:clamp(30px,5vw,56px); color:var(--white); line-height:1; }
+.fm-timer.low { color:#ff6b6b; animation:pulse .5s ease infinite alternate; }
+@keyframes pulse { from{opacity:1} to{opacity:.4} }
+.fm-qualifier-strip { display:flex; gap:8px; padding:10px 20px 0; flex-shrink:0; }
+.fm-qual-chip { flex:1; background:var(--navy2); border:1px solid rgba(245,200,66,.3); border-radius:8px; padding:8px 12px; display:flex; align-items:center; gap:8px; }
+.fm-qual-chip.active { border-color:var(--gold); background:rgba(245,200,66,.1); box-shadow:0 0 12px rgba(245,200,66,.2); }
+.fm-player-label { font-family:'Barlow Condensed',sans-serif; font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--text-dim); }
+.fm-player-name { font-family:'Bebas Neue',sans-serif; font-size:18px; color:var(--white); }
+.fm-player-score { font-family:'Bebas Neue',sans-serif; font-size:22px; color:var(--gold); margin-left:auto; }
+.fm-body { flex:1; padding:10px 20px; display:flex; flex-direction:column; gap:8px; overflow:auto; }
+.fm-question-block { background:var(--navy2); border:1px solid rgba(255,255,255,.1); border-radius:10px; overflow:hidden; }
+.fm-q-header { background:rgba(245,200,66,.08); border-bottom:1px solid rgba(245,200,66,.12); padding:9px 14px; display:flex; align-items:center; gap:10px; cursor:pointer; }
+.fm-q-num { font-family:'Bebas Neue',sans-serif; font-size:19px; color:var(--gold); min-width:22px; }
+.fm-q-text { font-family:'Barlow Condensed',sans-serif; font-size:clamp(13px,1.8vw,17px); font-weight:600; color:var(--white); flex:1; }
+.fm-q-pts { font-family:'Bebas Neue',sans-serif; font-size:20px; color:var(--green2); }
+.fm-answers { padding:7px 9px; display:grid; grid-template-columns:1fr 1fr; gap:5px; }
+.fm-tile { display:flex; align-items:center; gap:8px; background:var(--tile-hidden); border:1.5px solid var(--tile-border); border-radius:7px; padding:7px 10px; cursor:pointer; transition:all .2s; min-height:40px; }
+.fm-tile.revealed { background:var(--tile-reveal); border-color:var(--tile-reveal-border); }
+.fm-tile-num { font-family:'Bebas Neue',sans-serif; font-size:15px; color:var(--gold); min-width:16px; flex-shrink:0; }
+.fm-tile-text { font-family:'Barlow Condensed',sans-serif; font-size:clamp(12px,1.4vw,15px); font-weight:600; color:var(--white); flex:1; }
+.fm-tile-pts { font-family:'Bebas Neue',sans-serif; font-size:16px; color:var(--gold); margin-left:auto; flex-shrink:0; }
+.fm-tile-hidden-text { font-family:'Bebas Neue',sans-serif; font-size:15px; color:var(--tile-border); flex:1; }
+.fm-controls { padding:8px 20px 14px; display:flex; gap:7px; flex-shrink:0; flex-wrap:wrap; }
+
+/* ── FINAL ── */
+#s-final { align-items:center; justify-content:center; padding:2rem; }
+.final-logo { font-family:'Bebas Neue',sans-serif; font-size:clamp(30px,5vw,60px); color:var(--gold); letter-spacing:4px; text-align:center; margin-bottom:.25rem; }
+.final-winner { font-family:'Bebas Neue',sans-serif; font-size:clamp(26px,4vw,50px); text-align:center; color:var(--white); letter-spacing:2px; margin-bottom:.25rem; }
+.final-margin { font-size:13px; color:var(--text-dim); text-align:center; margin-bottom:1.5rem; letter-spacing:1px; font-family:'Barlow Condensed',sans-serif; text-transform:uppercase; }
+.podium-list { width:100%; max-width:520px; display:flex; flex-direction:column; gap:7px; margin-bottom:1.5rem; }
+.pod-row { display:flex; align-items:center; gap:12px; background:var(--navy2); border:1px solid rgba(255,255,255,.08); border-radius:10px; padding:12px 16px; }
+.pod-row.first { border-color:var(--gold); background:rgba(245,200,66,.08); }
+.pod-rank { font-family:'Bebas Neue',sans-serif; font-size:24px; color:var(--text-dim); min-width:32px; }
+.pod-row.first .pod-rank { color:var(--gold); font-size:32px; }
+.pod-dot { width:12px; height:12px; border-radius:50%; flex-shrink:0; }
+.pod-name { flex:1; font-family:'Bebas Neue',sans-serif; font-size:20px; letter-spacing:1px; color:var(--white); }
+.pod-size { font-size:11px; color:var(--text-dim); font-family:'Barlow Condensed',sans-serif; }
+.pod-score { font-family:'Bebas Neue',sans-serif; font-size:26px; color:var(--gold); }
+
+/* ── QUESTION EDITOR ── */
+#s-qedit { align-items:center; justify-content:flex-start; padding:2rem 1rem; overflow-y:auto; }
+.qe-title { font-family:'Bebas Neue',sans-serif; font-size:clamp(28px,5vw,54px); color:var(--gold); letter-spacing:3px; text-align:center; margin-bottom:4px; }
+.qe-sub { font-family:'Barlow Condensed',sans-serif; font-size:13px; color:var(--text-dim); text-align:center; letter-spacing:2px; text-transform:uppercase; margin-bottom:1.2rem; }
+.qe-tabs { display:flex; gap:6px; margin-bottom:1rem; width:100%; max-width:720px; }
+.qe-tab { flex:1; padding:9px 10px; border-radius:8px; border:1px solid rgba(255,255,255,.15); background:transparent; color:var(--text-dim); font-family:'Barlow Condensed',sans-serif; font-size:13px; font-weight:600; letter-spacing:2px; text-transform:uppercase; cursor:pointer; transition:all .15s; }
+.qe-tab.active { background:rgba(245,200,66,.1); border-color:var(--gold); color:var(--gold); }
+.qe-tab:hover:not(.active) { background:rgba(255,255,255,.05); border-color:rgba(255,255,255,.3); color:var(--white); }
+.qe-panel { width:100%; max-width:720px; display:flex; flex-direction:column; gap:8px; }
+.qe-card { background:var(--navy2); border:1px solid rgba(255,255,255,.08); border-radius:10px; padding:12px 14px; }
+.qe-card-header { display:flex; align-items:center; gap:8px; margin-bottom:8px; flex-wrap:wrap; }
+.qe-num { font-family:'Bebas Neue',sans-serif; font-size:18px; color:var(--text-dim); min-width:26px; flex-shrink:0; }
+.qe-cat-inp { background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12); border-radius:7px; padding:7px 10px; color:var(--gold); font-family:'Barlow Condensed',sans-serif; font-size:12px; letter-spacing:2px; text-transform:uppercase; outline:none; width:150px; flex-shrink:0; }
+.qe-cat-inp:focus { border-color:var(--gold); }
+.qe-cat-inp::placeholder { color:rgba(245,200,66,.3); }
+.qe-mult-sel { background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12); border-radius:7px; padding:7px 8px; color:var(--white); font-family:'Barlow Condensed',sans-serif; font-size:12px; outline:none; cursor:pointer; }
+.qe-del-q-btn { margin-left:auto; padding:5px 10px; border-radius:6px; border:1px solid rgba(200,41,46,.4); background:transparent; color:rgba(200,41,46,.7); font-size:13px; cursor:pointer; transition:all .15s; flex-shrink:0; }
+.qe-del-q-btn:hover { background:rgba(200,41,46,.15); color:#ff6b6b; border-color:var(--red); }
+.qe-q-inp { width:100%; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12); border-radius:7px; padding:8px 11px; color:var(--white); font-family:'Barlow',sans-serif; font-size:13px; outline:none; margin-bottom:8px; resize:vertical; min-height:40px; }
+.qe-q-inp:focus { border-color:var(--gold); }
+.qe-q-inp::placeholder { color:rgba(255,255,255,.25); }
+.qe-ans-grid { display:grid; grid-template-columns:1fr 1fr; gap:5px; margin-bottom:6px; }
+.qe-ans-row { display:flex; align-items:center; gap:5px; }
+.qe-ans-num { font-family:'Bebas Neue',sans-serif; font-size:14px; color:var(--text-dim); min-width:16px; text-align:right; flex-shrink:0; }
+.qe-ans-inp { flex:1; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.10); border-radius:6px; padding:6px 8px; color:var(--white); font-family:'Barlow Condensed',sans-serif; font-size:13px; font-weight:600; outline:none; }
+.qe-ans-inp:focus { border-color:rgba(255,255,255,.3); }
+.qe-ans-inp::placeholder { color:rgba(255,255,255,.2); }
+.qe-pts-inp { width:52px; background:rgba(245,200,66,.07); border:1px solid rgba(245,200,66,.15); border-radius:6px; padding:6px 6px; color:var(--gold); font-family:'Bebas Neue',sans-serif; font-size:15px; outline:none; text-align:center; }
+.qe-pts-inp:focus { border-color:var(--gold); }
+.qe-del-a-btn { width:22px; height:22px; border-radius:5px; border:1px solid rgba(200,41,46,.35); background:transparent; color:rgba(200,41,46,.6); font-size:10px; cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center; padding:0; }
+.qe-del-a-btn:hover { background:rgba(200,41,46,.15); color:#ff6b6b; border-color:var(--red); }
+.qe-pts-bar { display:flex; align-items:center; justify-content:flex-end; gap:6px; margin-bottom:4px; }
+.qe-pts-label { font-family:'Bebas Neue',sans-serif; font-size:12px; letter-spacing:1px; }
+.qe-add-ans-btn { width:100%; padding:6px 10px; border-radius:7px; border:1px dashed rgba(255,255,255,.18); background:transparent; color:rgba(255,255,255,.4); font-family:'Barlow Condensed',sans-serif; font-size:12px; letter-spacing:1px; text-transform:uppercase; cursor:pointer; transition:all .15s; }
+.qe-add-ans-btn:hover { background:rgba(255,255,255,.04); color:var(--white); border-color:rgba(255,255,255,.35); }
+.qe-add-q-btn { width:100%; max-width:720px; padding:12px; border-radius:9px; border:2px dashed rgba(245,200,66,.25); background:transparent; color:rgba(245,200,66,.5); font-family:'Barlow Condensed',sans-serif; font-size:14px; font-weight:600; letter-spacing:2px; text-transform:uppercase; cursor:pointer; transition:all .15s; }
+.qe-add-q-btn:hover { background:rgba(245,200,66,.05); color:var(--gold); border-color:rgba(245,200,66,.5); }
+.qe-btn-row { display:flex; gap:8px; width:100%; max-width:720px; margin-top:.5rem; margin-bottom:2rem; }
+.qe-back-btn { flex:0 0 auto; padding:12px 16px; border-radius:9px; border:1px solid rgba(255,255,255,.2); background:transparent; color:var(--text-dim); font-family:'Barlow Condensed',sans-serif; font-size:14px; font-weight:600; letter-spacing:1px; text-transform:uppercase; cursor:pointer; transition:all .15s; }
+.qe-back-btn:hover { background:rgba(255,255,255,.06); color:var(--white); }
+.qe-reset-btn { flex:1; padding:12px 16px; border-radius:9px; border:1px solid rgba(255,255,255,.2); background:transparent; color:var(--text-dim); font-family:'Barlow Condensed',sans-serif; font-size:14px; font-weight:600; letter-spacing:1px; text-transform:uppercase; cursor:pointer; transition:all .15s; }
+.qe-reset-btn:hover { background:rgba(255,255,255,.06); color:var(--white); }
+.qe-start-btn { flex:3; background:var(--gold); color:var(--navy); border:none; border-radius:9px; padding:14px 32px; font-family:'Bebas Neue',sans-serif; font-size:24px; letter-spacing:3px; cursor:pointer; transition:transform .15s,background .15s; }
+.qe-start-btn:hover { background:#ffe060; transform:scale(1.02); }
+/* ── RULES ── */
+.rules-toggle { display:flex; align-items:center; justify-content:space-between; cursor:pointer; user-select:none; }
+.rules-toggle:hover .rules-toggle-label { color:var(--gold); }
+.rules-toggle-label { font-family:'Barlow Condensed',sans-serif; font-size:12px; letter-spacing:3px; text-transform:uppercase; color:var(--gold); transition:color .2s; }
+.rules-chevron { font-size:12px; color:var(--text-dim); transition:transform .25s; }
+.rules-chevron.open { transform:rotate(180deg); }
+.rules-body { display:none; margin-top:1rem; }
+.rules-body.open { display:block; }
+.rules-section { margin-bottom:1rem; }
+.rules-section:last-child { margin-bottom:0; }
+.rules-section-title { font-family:'Bebas Neue',sans-serif; font-size:16px; letter-spacing:2px; color:var(--gold); margin-bottom:6px; display:flex; align-items:center; gap:8px; }
+.rules-section-title::after { content:''; flex:1; height:1px; background:rgba(245,200,66,.2); }
+.rules-list { list-style:none; display:flex; flex-direction:column; gap:5px; }
+.rules-list li { font-family:'Barlow Condensed',sans-serif; font-size:13px; color:rgba(255,255,255,.8); line-height:1.45; padding-left:14px; position:relative; }
+.rules-list li::before { content:'›'; position:absolute; left:0; color:var(--gold); font-weight:700; }
+.rules-divider { height:1px; background:rgba(255,255,255,.06); margin:0.75rem 0; }
+</style>
+</head>
+<body>
+
+<!-- ══ SETUP ══════════════════════════════════════════════════════════════════ -->
+<div class="screen active" id="s-setup">
+  <!-- Family Feud Logo — faithful SVG recreation -->
+  <svg viewBox="0 0 600 340" xmlns="http://www.w3.org/2000/svg" style="width:60%;max-width:260px;margin-bottom:4px" role="img" aria-label="Family Feud">
+    <defs>
+      <!-- Deep blue radial for oval body -->
+      <radialGradient id="ovalBg" cx="50%" cy="45%" r="55%">
+        <stop offset="0%" stop-color="#3a6fd8"/>
+        <stop offset="60%" stop-color="#1a4ab8"/>
+        <stop offset="100%" stop-color="#0d2f8a"/>
+      </radialGradient>
+      <!-- Orange-red border gradient -->
+      <linearGradient id="borderGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#ff7020"/>
+        <stop offset="40%" stop-color="#e83010"/>
+        <stop offset="100%" stop-color="#c01808"/>
+      </linearGradient>
+      <!-- Silver/chrome ring -->
+      <linearGradient id="silverGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#e8eef8"/>
+        <stop offset="30%" stop-color="#b0bcd8"/>
+        <stop offset="70%" stop-color="#8898c0"/>
+        <stop offset="100%" stop-color="#d0d8f0"/>
+      </linearGradient>
+      <!-- Text orange-gold gradient -->
+      <linearGradient id="textGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#ffe040"/>
+        <stop offset="35%" stop-color="#ffb820"/>
+        <stop offset="65%" stop-color="#ff8c00"/>
+        <stop offset="100%" stop-color="#e05000"/>
+      </linearGradient>
+      <!-- Text shadow/depth gradient (darker orange for 3-D effect) -->
+      <linearGradient id="textShadow" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#c04000"/>
+        <stop offset="100%" stop-color="#7a1a00"/>
+      </linearGradient>
+      <!-- Dot pattern -->
+      <pattern id="dots" x="0" y="0" width="18" height="18" patternUnits="userSpaceOnUse">
+        <circle cx="9" cy="9" r="2.8" fill="rgba(160,200,255,0.35)"/>
+      </pattern>
+      <!-- Clip oval -->
+      <clipPath id="ovalClip">
+        <ellipse cx="300" cy="170" rx="268" ry="152"/>
+      </clipPath>
+      <!-- Inner glow filter -->
+      <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur"/>
+        <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+      </filter>
+      <filter id="textGlow" x="-10%" y="-10%" width="120%" height="120%">
+        <feGaussianBlur in="SourceAlpha" stdDeviation="4" result="blur"/>
+        <feFlood flood-color="#ff6000" flood-opacity="0.8" result="color"/>
+        <feComposite in="color" in2="blur" operator="in" result="shadow"/>
+        <feMerge><feMergeNode in="shadow"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+    </defs>
+
+    <!-- ── Outermost dark shadow ring ── -->
+    <ellipse cx="302" cy="174" rx="272" ry="156" fill="rgba(0,0,0,0.45)"/>
+
+    <!-- ── Chrome/silver outer ring ── -->
+    <ellipse cx="300" cy="170" rx="270" ry="154" fill="url(#silverGrad)"/>
+
+    <!-- ── Orange-red thick border ring ── -->
+    <ellipse cx="300" cy="170" rx="258" ry="143" fill="url(#borderGrad)"/>
+
+    <!-- ── Thin white/silver inner accent ring ── -->
+    <ellipse cx="300" cy="170" rx="244" ry="130" fill="none" stroke="#c8d8f8" stroke-width="4"/>
+    <ellipse cx="300" cy="170" rx="240" ry="126" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="2"/>
+
+    <!-- ── Blue oval body ── -->
+    <ellipse cx="300" cy="170" rx="236" ry="122" fill="url(#ovalBg)"/>
+
+    <!-- ── Dot grid over oval ── -->
+    <ellipse cx="300" cy="170" rx="236" ry="122" fill="url(#dots)"/>
+
+    <!-- ── Inner highlight arc (top gloss) ── -->
+    <ellipse cx="300" cy="112" rx="160" ry="52" fill="rgba(255,255,255,0.12)"/>
+
+    <!-- ── FAMILY text — 3-D layered effect ── -->
+    <!-- Shadow layer (offset) -->
+    <text x="305" y="164" font-family="'Georgia', 'Times New Roman', serif" font-size="108" font-weight="900" font-style="italic" fill="url(#textShadow)" text-anchor="middle" letter-spacing="-2" opacity="0.7">FAMILY</text>
+    <!-- Main text -->
+    <text x="300" y="158" font-family="'Georgia', 'Times New Roman', serif" font-size="108" font-weight="900" font-style="italic" fill="url(#textGrad)" text-anchor="middle" letter-spacing="-2" filter="url(#textGlow)">FAMILY</text>
+    <!-- White outline stroke -->
+    <text x="300" y="158" font-family="'Georgia', 'Times New Roman', serif" font-size="108" font-weight="900" font-style="italic" fill="none" stroke="white" stroke-width="3" stroke-linejoin="round" text-anchor="middle" letter-spacing="-2" opacity="0.5">FAMILY</text>
+
+    <!-- ── FEUD text ── -->
+    <!-- Shadow layer -->
+    <text x="305" y="266" font-family="'Georgia', 'Times New Roman', serif" font-size="108" font-weight="900" font-style="italic" fill="url(#textShadow)" text-anchor="middle" letter-spacing="-2" opacity="0.7">FEUD</text>
+    <!-- Main text -->
+    <text x="300" y="260" font-family="'Georgia', 'Times New Roman', serif" font-size="108" font-weight="900" font-style="italic" fill="url(#textGrad)" text-anchor="middle" letter-spacing="-2" filter="url(#textGlow)">FEUD</text>
+    <!-- White outline -->
+    <text x="300" y="260" font-family="'Georgia', 'Times New Roman', serif" font-size="108" font-weight="900" font-style="italic" fill="none" stroke="white" stroke-width="3" stroke-linejoin="round" text-anchor="middle" letter-spacing="-2" opacity="0.5">FEUD</text>
+  </svg>
+  <div class="setup-sub">Custom Edition &nbsp;·&nbsp; 25 Rounds + Fast Money</div>
+
+  <div class="setup-box">
+    <h2>Number of teams</h2>
+    <div class="stepper">
+      <button class="step-btn" onclick="changeTeamCount(-1)">−</button>
+      <div class="step-val" id="team-count-val">5</div>
+      <button class="step-btn" onclick="changeTeamCount(1)">+</button>
+      <div class="step-label">teams &nbsp;(2–8)</div>
+    </div>
+  </div>
+
+  <div class="setup-box">
+    <h2>Team names, colours & sizes</h2>
+    <div style="display:grid;grid-template-columns:22px 1fr 64px;gap:6px;padding:0 12px 6px;font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);">
+      <span></span><span>Name</span><span style="text-align:center">Players</span>
+    </div>
+    <div id="team-config-rows"></div>
+  </div>
+
+  <div class="setup-box">
+    <h2>Fast Money qualification</h2>
+    <div class="cutoff-banner">
+      <div class="cutoff-icon">⭐</div>
+      <div class="cutoff-text">Top 2 teams with <strong>500+ points</strong> after all 25 rounds qualify for Fast Money. Total points available: <strong>3,271</strong>.</div>
+    </div>
+  </div>
+
+  <div class="setup-box">
+    <div class="rules-toggle" onclick="toggleRules()">
+      <h2 class="rules-toggle-label">How to Play</h2>
+      <span class="rules-chevron" id="rules-chevron">▼</span>
+    </div>
+    <div class="rules-body" id="rules-body">
+
+      <div class="rules-section">
+        <div class="rules-section-title">The Main Game</div>
+        <ul class="rules-list">
+          <li>Teams take turns competing head-to-head on a question. The survey answers are hidden on the board — teams must guess the most popular responses.</li>
+          <li>The team that wins the face-off (by guessing a top answer first) takes control of the board and tries to reveal all remaining answers.</li>
+          <li>Each correct answer flips a tile and adds its points to the round total.</li>
+          <li>Every wrong answer earns a <strong style="color:#ff8080">Strike ✕</strong>. Three strikes and the other team gets one chance to <strong style="color:var(--gold)">Steal</strong> — if they guess any unrevealed answer, they take all the points.</li>
+          <li>The host clicks <strong style="color:var(--gold)">Award</strong> on the scoreboard to give the round's points to the winning team.</li>
+          <li>Some rounds carry a <strong style="color:var(--gold)">×2 or ×3 multiplier</strong> — all answer points are multiplied accordingly.</li>
+        </ul>
+      </div>
+
+      <div class="rules-divider"></div>
+
+      <div class="rules-section">
+        <div class="rules-section-title">Strikes & Stealing</div>
+        <ul class="rules-list">
+          <li>The team in control answers one at a time. A wrong answer = one strike.</li>
+          <li>After 3 strikes the board locks and the opposing team gets one collective guess to steal.</li>
+          <li>If the steal is correct, they win all accumulated points. If wrong, the controlling team keeps them.</li>
+          <li>The host can award points to any team using the <strong style="color:var(--gold)">Award</strong> buttons on the scoreboard — including after a steal.</li>
+        </ul>
+      </div>
+
+      <div class="rules-divider"></div>
+
+      <div class="rules-section">
+        <div class="rules-section-title">Fast Money</div>
+        <ul class="rules-list">
+          <li>The top 2 teams with <strong style="color:var(--gold)">500+ points</strong> after all rounds qualify for Fast Money. If fewer than 2 teams hit 500, the top 2 by score qualify regardless.</li>
+          <li>Each team sends <strong style="color:var(--white)">2 players</strong> to the hot seat — one at a time.</li>
+          <li><strong style="color:var(--white)">Player 1</strong> has <strong style="color:var(--gold)">20 seconds</strong> to answer all 5 questions. Their answers are hidden from Player 2.</li>
+          <li>The board is cleared, then <strong style="color:var(--white)">Player 2</strong> has <strong style="color:var(--gold)">25 seconds</strong> to answer the same 5 questions. They cannot repeat any answer Player 1 already gave.</li>
+          <li>The team's combined score from both players is added to the main scoreboard.</li>
+          <li>Click any answer tile to reveal it, and use the timer controls to start, pause, and reset.</li>
+          <li>The same format repeats for the second qualifying team.</li>
+        </ul>
+      </div>
+
+      <div class="rules-divider"></div>
+
+      <div class="rules-section">
+        <div class="rules-section-title">Winning</div>
+        <ul class="rules-list">
+          <li>The team with the most total points at the end of Fast Money wins the game.</li>
+          <li>If no teams qualify for Fast Money, the team with the highest score after all rounds wins.</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+  <button class="start-btn" onclick="goToQEdit()">Next: Edit Questions →</button>
+</div>
+
+
+<!-- ══ QUESTION EDITOR ════════════════════════════════════════════════════════ -->
+<div class="screen" id="s-qedit">
+  <div class="qe-title">Edit Questions</div>
+  <div class="qe-sub">Customise every question &amp; answer before play begins</div>
+  <div class="qe-tabs">
+    <button class="qe-tab active" id="qetab-rounds" onclick="qeShowTab('rounds')">📋 Rounds</button>
+    <button class="qe-tab" id="qetab-fm" onclick="qeShowTab('fm')">⚡ Fast Money</button>
+  </div>
+  <div class="qe-panel" id="qe-rounds-panel"></div>
+  <div class="qe-panel" id="qe-fm-panel" style="display:none"></div>
+  <button class="qe-add-q-btn" id="qe-add-q-btn" onclick="qeAddQuestion()">+ Add Question</button>
+  <div class="qe-btn-row">
+    <button class="qe-back-btn" onclick="show('s-setup')">← Back</button>
+    <button class="qe-reset-btn" onclick="qeReset()">↺ Reset</button>
+    <button class="qe-start-btn" onclick="qeLaunch()">▶ Start the Show</button>
+  </div>
+</div>
+
+<!-- ══ GAME ═══════════════════════════════════════════════════════════════════ -->
+<div class="screen" id="s-game">
+  <div class="game-top" id="game-top"></div>
+  <div class="board-wrap">
+    <div class="board-category" id="g-cat"></div>
+    <div class="board-question" id="g-q"></div>
+    <div class="tiles-grid" id="g-tiles"></div>
+  </div>
+  <div class="strikes-row">
+    <div class="strike-x" id="sk0">✕</div>
+    <div class="strike-x" id="sk1">✕</div>
+    <div class="strike-x" id="sk2">✕</div>
+    <div class="round-pts-display" id="g-rndpts">0 pts</div>
+    <div class="mult-pill" id="g-mult-pill"></div>
+  </div>
+  <div class="steal-overlay" id="steal-overlay">
+    <div class="steal-title">⚡ Steal — pick the team</div>
+    <div class="steal-teams" id="steal-teams"></div>
+  </div>
+  <div class="qual-bar-wrap" id="qual-bar-wrap"></div>
+  <div style="padding:0 20px 4px;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);font-family:'Barlow Condensed',sans-serif;">Scoreboard — click Award after each round</div>
+  <div class="scores-strip" id="scores-strip"></div>
+  <div class="controls-bar">
+    <button class="ctrl red" onclick="addStrike()">✕ Strike</button>
+    <button class="ctrl green" onclick="revealAll()">Reveal all</button>
+    <button class="ctrl gold" onclick="show('s-rounds')">Rounds</button>
+    <button class="ctrl primary" onclick="nextRound()">Next →</button>
+  </div>
+</div>
+
+<!-- ══ ROUNDS LIST ════════════════════════════════════════════════════════════ -->
+<div class="screen" id="s-rounds">
+  <div class="rounds-title">All Rounds</div>
+  <div class="rounds-grid" id="rounds-grid"></div>
+  <button class="ctrl" style="max-width:180px" onclick="show('s-game')">← Back</button>
+</div>
+
+<!-- ══ FAST MONEY ═════════════════════════════════════════════════════════════ -->
+<div class="screen" id="s-fastmoney">
+  <div class="fm-header">
+    <div>
+      <div class="fm-title">⚡ Fast Money</div>
+      <div id="fm-context-label" style="font-family:'Barlow Condensed',sans-serif;font-size:13px;letter-spacing:2px;color:rgba(255,255,255,.7);margin-top:2px">TEAM 1 · PLAYER 1</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:14px">
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:2px;color:rgba(255,255,255,.5)" id="fm-timer-label">20 SECS</div>
+      </div>
+      <div class="fm-timer" id="fm-timer">20</div>
+    </div>
+  </div>
+  <div class="fm-qualifier-strip" id="fm-qualifier-strip"></div>
+  <div id="fm-step-dots" style="display:flex;justify-content:center;gap:8px;padding:6px 20px 0;flex-shrink:0;"></div>
+  <div class="fm-body" id="fm-body"></div>
+  <div class="fm-controls">
+    <button class="ctrl red" onclick="startTimer()">▶ Start</button>
+    <button class="ctrl" onclick="stopTimer()">⏸ Pause</button>
+    <button class="ctrl" onclick="resetTimer()">↺ Reset</button>
+  </div>
+  <div style="padding:0 20px 14px;display:flex;gap:7px;flex-shrink:0;flex-wrap:wrap;">
+    <button class="ctrl gold" style="flex:2;font-size:14px;padding:13px 10px;letter-spacing:.5px;" id="fm-next-btn" onclick="confirmNextFmRound()">▶▶ Lock in &amp; continue</button>
+    <button class="ctrl primary" style="flex:1;" id="fm-finish-btn" onclick="endFastMoney()" style="display:none">🏁 Final scores</button>
+  </div>
+</div>
+
+<!-- ══ FINAL ══════════════════════════════════════════════════════════════════ -->
+<div class="screen" id="s-final">
+  <div class="final-logo">Family Feud</div>
+  <div class="final-winner" id="f-winner"></div>
+  <div class="final-margin" id="f-margin"></div>
+  <div class="podium-list" id="podium"></div>
+  <button class="start-btn" style="max-width:400px" onclick="resetGame()">Play again</button>
+</div>
+
+<script>
+// ── COLOUR PALETTE ────────────────────────────────────────────────────────────
+const PALETTE = [
+  '#E24B4A','#378ADD','#1D9E75','#BA7517','#7F77DD',
+  '#E8822A','#C044A8','#3AB5C6','#8DB83A','#8B5E3C'
+];
+const DEFAULTS = ['Red Rockets','Blue Bolts','Green Giants','Gold Gladiators','Purple Panthers','Orange Owls','Pink Panthers','Teal Tigers'];
+const QUALIFY_CUTOFF = 500;
+
+// ── ROUND DATA ────────────────────────────────────────────────────────────────
+const ROUNDS = [
+  {cat:'Food',mult:1,q:"Name a topping people put on pizza",ans:[{t:'Cheese',p:38},{t:'Pepperoni',p:27},{t:'Mushrooms',p:16},{t:'Peppers',p:10},{t:'Olives',p:6},{t:'Pineapple',p:3}]},
+  {cat:'Morning routines',mult:1,q:"Name something people do first thing in the morning",ans:[{t:'Brush teeth',p:35},{t:'Check phone',p:28},{t:'Make coffee',p:17},{t:'Shower',p:11},{t:'Stretch',p:6},{t:'Check the news',p:3}]},
+  {cat:'Travel',mult:1,q:"Name something people always forget to pack when travelling",ans:[{t:'Charger',p:36},{t:'Toothbrush',p:25},{t:'Passport',p:18},{t:'Sunscreen',p:11},{t:'Medication',p:7},{t:'Socks',p:3}]},
+  {cat:'School days',mult:1,q:"Name something students dread on a Monday morning",ans:[{t:'Homework due',p:34},{t:'Early start',p:26},{t:'A test or exam',p:19},{t:'Presentations',p:11},{t:'PE class',p:7},{t:'Cafeteria food',p:3}]},
+  {cat:'Habits',mult:1,q:"Name something people do while watching TV",ans:[{t:'Eat snacks',p:40},{t:'Scroll on phone',p:27},{t:'Fall asleep',p:16},{t:'Talk over it',p:9},{t:'Fold laundry',p:5},{t:'Exercise',p:3}]},
+  {cat:'Animals',mult:2,q:"Name an animal people keep as an unusual pet",ans:[{t:'Snake',p:35},{t:'Parrot',p:25},{t:'Lizard',p:18},{t:'Rabbit',p:12},{t:'Ferret',p:7},{t:'Hedgehog',p:3}]},
+  {cat:'Superheroes',mult:1,q:"Name something every superhero seems to have",ans:[{t:'A cape',p:33},{t:'Special powers',p:26},{t:'A secret identity',p:18},{t:'A sidekick',p:12},{t:'A villain nemesis',p:8},{t:'A costume',p:3}]},
+  {cat:'Celebrations',mult:1,q:"Name something you always see at a birthday party",ans:[{t:'Cake',p:42},{t:'Balloons',p:26},{t:'Presents',p:17},{t:'Candles',p:9},{t:'Party hats',p:4},{t:'Music',p:2}]},
+  {cat:'Nature',mult:1,q:"Name something that makes people run indoors",ans:[{t:'Rain',p:38},{t:'Thunder',p:27},{t:'A bee or wasp',p:17},{t:'Wind',p:10},{t:'A dog',p:5},{t:'Hailstones',p:3}]},
+  {cat:'Careers',mult:1,q:"Name a job where you have to smile all day",ans:[{t:'Flight attendant',p:31},{t:'Shop assistant',p:24},{t:'Nurse',p:19},{t:'Receptionist',p:14},{t:'Teacher',p:8},{t:'Actor',p:4}]},
+  {cat:'Lazy days',mult:1,q:"Name something you do on a lazy Sunday",ans:[{t:'Watch TV',p:38},{t:'Sleep in',p:27},{t:'Order takeaway',p:16},{t:'Read',p:10},{t:'Go for a walk',p:6},{t:'Cook a big meal',p:3}]},
+  {cat:'Childhood',mult:1,q:"Name a game children play at a birthday party",ans:[{t:'Musical chairs',p:34},{t:'Pass the parcel',p:27},{t:'Hide and seek',p:18},{t:'Pin the tail on the donkey',p:11},{t:'Limbo',p:7},{t:'Tag',p:3}]},
+  {cat:'Famous duos',mult:1,q:"Name a famous duo from films or TV",ans:[{t:'Tom and Jerry',p:30},{t:'Batman and Robin',p:25},{t:'Sherlock and Watson',p:19},{t:'Buzz and Woody',p:14},{t:'SpongeBob and Patrick',p:9},{t:'Shrek and Donkey',p:3}]},
+  {cat:'Bucket list',mult:1,q:"Name something on most people's bucket list",ans:[{t:'Travel the world',p:35},{t:'Skydiving',p:26},{t:'See the Northern Lights',p:18},{t:'Learn a language',p:11},{t:'Write a book',p:7},{t:'Run a marathon',p:3}]},
+  {cat:'Fitness',mult:2,q:"Name an excuse people give for skipping the gym",ans:[{t:'Too tired',p:36},{t:'Too busy',p:27},{t:'Too expensive',p:16},{t:'The weather',p:11},{t:'Feeling unwell',p:7},{t:'No one to go with',p:3}]},
+  {cat:'Kitchen',mult:1,q:"Name something always found in a kitchen",ans:[{t:'Kettle',p:36},{t:'Fridge',p:28},{t:'Toaster',p:17},{t:'Microwave',p:11},{t:'Knife',p:5},{t:'Cutting board',p:3}]},
+  {cat:'Emotions',mult:1,q:"Name something that makes people cry happy tears",ans:[{t:'A wedding',p:34},{t:'Having a baby',p:27},{t:'Graduating',p:18},{t:'A surprise reunion',p:12},{t:'Winning something',p:6},{t:'A film',p:3}]},
+  {cat:'School',mult:1,q:"Name something a teacher confiscates from students",ans:[{t:'Phone',p:42},{t:'Sweets or food',p:25},{t:'A note',p:16},{t:'A toy',p:10},{t:'Earphones',p:5},{t:'A book',p:2}]},
+  {cat:'Fast food',mult:1,q:"Name something people always order at a fast food restaurant",ans:[{t:'Burger',p:36},{t:'Chips or Fries',p:28},{t:'Fizzy drink',p:17},{t:'Chicken nuggets',p:11},{t:'Milkshake',p:5},{t:'Apple pie',p:3}]},
+  {cat:'Safari',mult:3,q:"Name something you would see on a safari",ans:[{t:'Lion',p:34},{t:'Elephant',p:27},{t:'Giraffe',p:18},{t:'Zebra',p:12},{t:'Cheetah',p:6},{t:'Hippo',p:3}]},
+  {cat:'Technology',mult:3,q:"Name something people do on their phone every single day",ans:[{t:'Check social media',p:36},{t:'Send messages',p:27},{t:'Take photos',p:17},{t:'Watch videos',p:11},{t:'Check emails',p:6},{t:'Play games',p:3}]},
+  {cat:'Superpowers',mult:1,q:"Name a superpower most people say they would want",ans:[{t:'Fly',p:37},{t:'Invisibility',p:25},{t:'Super strength',p:16},{t:'Time travel',p:12},{t:'Read minds',p:7},{t:'Teleport',p:3}]},
+  {cat:'Quirky',mult:1,q:"Name something people talk to when they are alone",ans:[{t:'Their pet',p:36},{t:'Themselves',p:26},{t:'The TV',p:17},{t:'Plants',p:11},{t:'Imaginary friends',p:7},{t:'A mirror',p:3}]},
+  {cat:'Cooking',mult:1,q:"Name something people burn when they cook",ans:[{t:'Toast',p:38},{t:'Pasta',p:24},{t:'Eggs',p:18},{t:'Garlic',p:11},{t:'Popcorn',p:6},{t:'Rice',p:3}]},
+  {cat:'Holidays',mult:2,q:"Name something people do on the last day of a holiday",ans:[{t:'Pack their bags',p:34},{t:'Buy last-minute gifts',p:26},{t:'Take final photos',p:18},{t:'Go for one last swim',p:12},{t:'Cry',p:7},{t:'Eat a big meal',p:3}]},
+];
+
+const FM_QUESTIONS = [
+  {q:"Name something people do to celebrate New Year",ans:[{t:'Watch fireworks',p:38},{t:'Party with friends',p:27},{t:'Count down to midnight',p:18},{t:'Toast with a drink',p:10},{t:'Set resolutions',p:7}]},
+  {q:"Name something that always makes people smile",ans:[{t:'A puppy or kitten',p:35},{t:'A funny joke',p:26},{t:'A baby laughing',p:19},{t:'Good news',p:12},{t:'A rainbow',p:8}]},
+  {q:"Name a word people shout when they are excited",ans:[{t:'Yay',p:33},{t:'Woo',p:27},{t:'Yes',p:20},{t:'Wahoo',p:13},{t:'Let us go',p:7}]},
+  {q:"Name something you find in every living room",ans:[{t:'Sofa',p:38},{t:'TV',p:29},{t:'Coffee table',p:17},{t:'Cushions',p:11},{t:'Remote control',p:5}]},
+  {q:"Name an animal that can talk in cartoons",ans:[{t:'Parrot',p:32},{t:'Dog',p:25},{t:'Cat',p:20},{t:'Lion',p:14},{t:'Duck',p:9}]},
+];
+
+// ── SETUP STATE ───────────────────────────────────────────────────────────────
+let setupTeamCount = 5;
+let setupColors = [...PALETTE.slice(0,8)];
+let openColorPicker = null;
+
+function changeTeamCount(delta){
+  setupTeamCount = Math.max(2, Math.min(8, setupTeamCount + delta));
+  document.getElementById('team-count-val').textContent = setupTeamCount;
+  renderTeamConfigRows();
+}
+
+function renderTeamConfigRows(){
+  const container = document.getElementById('team-config-rows');
+  container.innerHTML = '';
+  for(let i=0;i<setupTeamCount;i++){
+    const color = setupColors[i] || PALETTE[i % PALETTE.length];
+    const name = (document.getElementById('tname-'+i)||{}).value || DEFAULTS[i] || `Team ${i+1}`;
+    const size = (document.getElementById('tsize-'+i)||{}).value || 6;
+    const row = document.createElement('div');
+    row.className = 'team-config-row';
+    row.innerHTML = `
+      <div class="color-picker-wrap" style="position:relative">
+        <div class="color-dot-btn" id="cdot-${i}" style="background:${color}" onclick="toggleColorPicker(${i}, event)"></div>
+        <div class="color-picker-popup" id="cpop-${i}">
+          ${PALETTE.map(c=>`<div class="color-swatch ${c===color?'selected':''}" style="background:${c}" onclick="pickColor(${i},'${c}',event)"></div>`).join('')}
+        </div>
+      </div>
+      <input class="team-name-inp" id="tname-${i}" placeholder="${DEFAULTS[i]||'Team '+(i+1)}" value="${name}" />
+      <input class="team-size-inp" id="tsize-${i}" type="number" min="1" max="30" value="${size}" title="Players on this team" />
+    `;
+    container.appendChild(row);
+  }
+}
+
+function toggleColorPicker(i, e){
+  e.stopPropagation();
+  const pop = document.getElementById('cpop-'+i);
+  const isOpen = pop.classList.contains('open');
+  document.querySelectorAll('.color-picker-popup').forEach(p=>p.classList.remove('open'));
+  if(!isOpen) pop.classList.add('open');
+}
+
+function pickColor(i, color, e){
+  e.stopPropagation();
+  setupColors[i] = color;
+  document.getElementById('cdot-'+i).style.background = color;
+  document.querySelectorAll('#cpop-'+i+' .color-swatch').forEach(s=>{
+    s.classList.toggle('selected', s.style.background === color || s.style.backgroundColor === color);
+  });
+  document.getElementById('cpop-'+i).classList.remove('open');
+}
+
+document.addEventListener('click', ()=>{
+  document.querySelectorAll('.color-picker-popup').forEach(p=>p.classList.remove('open'));
+});
+
+renderTeamConfigRows();
+
+// ── GAME STATE ────────────────────────────────────────────────────────────────
+let G = { teams:[], scores:[], sizes:[], strikes:0, revealed:[], rndPts:0, stealMode:false, cur:0, awarded:new Set() };
+let FM = { turn:0, playerRound:0, timerVal:20, timerRunning:false, timerInterval:null, revealed:[], totalPts:[0,0], teamPts:[0,0], qualifiers:[] };
+
+function startGame(){
+  G.teams = [];
+  for(let i=0;i<setupTeamCount;i++){
+    const name = (document.getElementById('tname-'+i).value||'').trim() || DEFAULTS[i] || `Team ${i+1}`;
+    const size = parseInt(document.getElementById('tsize-'+i).value) || 6;
+    const color = setupColors[i] || PALETTE[i%PALETTE.length];
+    G.teams.push({name, color, size});
+  }
+  G.scores = G.teams.map(()=>0);
+  G.cur = 0; G.awarded = new Set();
+  show('s-game');
+  loadRound(0);
+}
+
+// ── MATCHUP ROTATION ──────────────────────────────────────────────────────────
+function getMatchup(ri){
+  const n = G.teams.length;
+  const a = ri % n;
+  const b = (ri + 1) % n;
+  return [a, b];
+}
+
+// ── ROUND ─────────────────────────────────────────────────────────────────────
+function loadRound(i){
+  const r = ROUNDS[i];
+  G.strikes=0; G.revealed=r.ans.map(()=>false); G.rndPts=0; G.stealMode=false;
+  document.getElementById('steal-overlay').classList.remove('on');
+  renderHeader(i);
+  document.getElementById('g-cat').textContent = r.cat.toUpperCase();
+  document.getElementById('g-q').textContent = r.q;
+  const pill = document.getElementById('g-mult-pill');
+  if(r.mult>1){ pill.style.display='block'; pill.textContent=`×${r.mult} MULTIPLIER`; }
+  else pill.style.display='none';
+  document.getElementById('g-rndpts').textContent='0 pts';
+  renderStrikes(); renderTiles(); renderQualBar(); renderScores(i);
+}
+
+function renderHeader(ri){
+  const [ai,bi] = getMatchup(ri);
+  let html='';
+  G.teams.forEach((t,i)=>{
+    const playing = i===ai||i===bi;
+    const qual = G.scores[i] >= QUALIFY_CUTOFF;
+    html+=`<div class="team-panel ${playing?'playing':''}">
+      <div class="team-label">${playing?'Playing':'Watching'}</div>
+      <div class="team-name-display">${t.name}</div>
+      <div class="team-score-display">${G.scores[i]}</div>
+      <div class="team-size-badge">${t.size} players${qual?'':''}</div>
+      ${qual?'<div class="qualified-badge">✓ Qualified</div>':''}
+    </div>`;
+  });
+  // inject center
+  const panelCount = G.teams.length;
+  const insertAt = Math.floor(panelCount/2);
+  const rows = html.split('</div>\n    </div>');
+  // simpler: just build with center inline
+  let parts = G.teams.map((t,i)=>{
+    const playing = i===ai||i===bi;
+    const qual = G.scores[i] >= QUALIFY_CUTOFF;
+    return `<div class="team-panel ${playing?'playing':''}">
+      <div class="team-label">${playing?'Playing':'Watching'}</div>
+      <div class="team-name-display">${t.name}</div>
+      <div class="team-score-display">${G.scores[i]}</div>
+      <div class="team-size-badge">${t.size} players</div>
+      ${qual?'<div class="qualified-badge">✓ Qualified</div>':''}
+    </div>`;
+  });
+  parts.splice(Math.ceil(G.teams.length/2), 0, `<div class="center-panel">
+    <div class="round-badge">Round</div>
+    <div class="round-number">${ri+1}<span style="font-size:14px;color:var(--text-dim)">/${ROUNDS.length}</span></div>
+  </div>`);
+  document.getElementById('game-top').innerHTML = parts.join('');
+}
+
+function renderTiles(){
+  const r = ROUNDS[G.cur];
+  document.getElementById('g-tiles').innerHTML = r.ans.map((a,i)=>`
+    <div class="tile ${G.revealed[i]?'flipped':''}" onclick="toggleTile(${i})">
+      <div class="tile-inner">
+        <div class="tile-front"><span class="tile-num-hidden">${i+1}</span></div>
+        <div class="tile-back">
+          <span class="tile-num-reveal">${i+1}</span>
+          <span class="tile-text">${a.t}</span>
+          <span class="tile-pts">${a.p*r.mult}</span>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function toggleTile(i){
+  const r=ROUNDS[G.cur];
+  G.revealed[i]=!G.revealed[i];
+  if(G.revealed[i]) G.rndPts+=r.ans[i].p*r.mult;
+  else{ G.rndPts-=r.ans[i].p*r.mult; if(G.rndPts<0)G.rndPts=0; }
+  document.getElementById('g-rndpts').textContent=G.rndPts+' pts';
+  renderTiles();
+}
+
+function revealAll(){
+  const r=ROUNDS[G.cur]; G.rndPts=0;
+  G.revealed=r.ans.map(()=>true);
+  r.ans.forEach(a=>G.rndPts+=a.p*r.mult);
+  document.getElementById('g-rndpts').textContent=G.rndPts+' pts';
+  renderTiles();
+}
+
+function addStrike(){
+  if(G.strikes>=3)return;
+  G.strikes++;
+  renderStrikes();
+  if(G.strikes===3){ G.stealMode=true; showSteal(); }
+}
+
+function renderStrikes(){
+  [0,1,2].forEach(i=>document.getElementById('sk'+i).classList.toggle('active',i<G.strikes));
+}
+
+function showSteal(){
+  document.getElementById('steal-overlay').classList.add('on');
+  document.getElementById('steal-teams').innerHTML = G.teams.map((t,i)=>`
+    <button class="steal-team-btn" onclick="doSteal(${i})">
+      <span style="width:10px;height:10px;border-radius:50%;background:${t.color};display:inline-block;flex-shrink:0"></span>
+      ${t.name}
+    </button>`).join('');
+}
+
+function doSteal(ti){
+  G.scores[ti]+=G.rndPts;
+  G.stealMode=false;
+  document.getElementById('steal-overlay').classList.remove('on');
+  G.awarded.add(G.cur+'_'+ti);
+  renderHeader(G.cur); renderQualBar(); renderScores(G.cur);
+}
+
+function renderQualBar(){
+  // Show top score vs cutoff
+  const sorted = [...G.scores].sort((a,b)=>b-a);
+  const topScore = sorted[0]||0;
+  const pct = Math.min(100, Math.round((topScore/QUALIFY_CUTOFF)*100));
+  const qualCount = G.scores.filter(s=>s>=QUALIFY_CUTOFF).length;
+  document.getElementById('qual-bar-wrap').innerHTML=`
+    <div class="qual-bar-inner">
+      <div class="qual-bar-label">⭐ Fast Money</div>
+      <div class="qual-bar-track">
+        <div class="qual-bar-fill" style="width:${pct}%"></div>
+        <div class="qual-bar-line" title="500 pt cutoff"></div>
+      </div>
+      <div class="qual-bar-val">${qualCount>0?qualCount+' qualified':'Need 500'}</div>
+    </div>`;
+}
+
+function renderScores(ri){
+  const sorted = [...G.scores.map((s,i)=>({s,i}))].sort((a,b)=>b.s-a.s);
+  const top2idx = sorted.slice(0,2).map(x=>x.i);
+  document.getElementById('scores-strip').innerHTML = G.teams.map((t,i)=>{
+    const key=ri+'_'+i, isAwarded=G.awarded.has(key);
+    const [ai,bi]=getMatchup(ri), playing=i===ai||i===bi;
+    const qual=G.scores[i]>=QUALIFY_CUTOFF;
+    const isTop=top2idx.includes(i);
+    return `<div class="score-chip ${playing?'playing':''} ${qual&&isTop?'top-qualifier':qual?'qualified':''}">
+      <div class="chip-dot" style="background:${t.color}"></div>
+      <div class="chip-name">${t.name}</div>
+      ${qual?'<div class="chip-q-badge">FM</div>':''}
+      <div class="chip-score">${G.scores[i]}</div>
+      <button class="chip-award ${isAwarded?'awarded':''}" onclick="awardTo(${i})">${isAwarded?'✓':'Award'}</button>
+    </div>`;
+  }).join('');
+}
+
+function awardTo(ti){
+  const key=G.cur+'_'+ti;
+  if(G.awarded.has(key))return;
+  G.scores[ti]+=G.rndPts;
+  G.awarded.add(key);
+  renderHeader(G.cur); renderQualBar(); renderScores(G.cur);
+}
+
+function nextRound(){
+  const hasAward=G.teams.some((_,i)=>G.awarded.has(G.cur+'_'+i));
+  if(!hasAward&&!confirm('No points awarded for this round — continue anyway?'))return;
+  const next=G.cur+1;
+  if(next>=ROUNDS.length){ initFastMoney(); return; }
+  G.cur=next; loadRound(next);
+}
+
+// ── ROUNDS LIST ───────────────────────────────────────────────────────────────
+function buildRoundList(){
+  document.getElementById('rounds-grid').innerHTML = ROUNDS.map((r,i)=>{
+    const done=G.teams.some((_,ti)=>G.awarded.has(i+'_'+ti))||(i<G.cur);
+    const badge=r.mult>1?`<div class="rc-badge">×${r.mult}</div>`:'';
+    return `<div class="round-card ${done?'done':''} ${i===G.cur?'current':''}" onclick="jumpTo(${i})">
+      <div class="rc-num">${i+1}</div>
+      <div class="rc-info"><div class="rc-cat">${r.cat}</div><div class="rc-q">${r.q}</div></div>
+      ${badge}
+    </div>`;
+  }).join('')+`<div class="round-card" onclick="initFastMoney()">
+    <div class="rc-num">FM</div>
+    <div class="rc-info"><div class="rc-cat">Fast Money</div><div class="rc-q">5 quick-fire questions · Player 1: 20 secs · Player 2: 25 secs</div></div>
+    <div class="rc-fm">FINALE</div>
+  </div>`;
+}
+
+function jumpTo(i){ G.cur=i; loadRound(i); show('s-game'); }
+
+// ── FAST MONEY ────────────────────────────────────────────────────────────────
+// ── FAST MONEY STATE ─────────────────────────────────────────────────────────
+// 4 turns: T1P1(20s) → board clears → T1P2(25s) → tally → T2P1(20s) → board clears → T2P2(25s) → tally
+// FM.turn: 0=T1P1, 1=T1P2, 2=T2P1, 3=T2P2
+// Target: combined team total >= 200 pts wins Fast Money
+const FM_TARGET   = 200;
+const FM_TURN_TIMES = [20, 25, 20, 25];
+
+function initFastMoney(){
+  const ranked = [...G.teams.map((t,i)=>({t,i,s:G.scores[i]}))].sort((a,b)=>b.s-a.s);
+  const qualRanked = ranked.filter(x=>x.s >= QUALIFY_CUTOFF);
+  FM.qualifiers = (qualRanked.length >= 2 ? qualRanked.slice(0,2) : ranked.slice(0,2));
+  FM.turn      = 0;
+  FM.timerVal  = FM_TURN_TIMES[0];
+  FM.timerRunning = false;
+  clearInterval(FM.timerInterval);
+  // revealed[teamIdx][qi][ai] — separate boards per team, CLEARED between players
+  FM.revealed  = [
+    FM_QUESTIONS.map(q=>new Array(q.ans.length).fill(false)),
+    FM_QUESTIONS.map(q=>new Array(q.ans.length).fill(false))
+  ];
+  // p1pts[teamIdx] = locked score from player 1; teamPts = running combined total
+  FM.p1pts     = [0, 0];
+  FM.teamPts   = [0, 0];
+  FM.totalPts  = [0, 0]; // compat alias
+  show('s-fastmoney');
+  renderFastMoney();
+}
+
+function currentTeamIdx(){ return FM.turn <= 1 ? 0 : 1; }
+function currentPlayerNum(){ return FM.turn % 2 === 0 ? 1 : 2; }
+
+// Points scored on the CURRENT board for the current team
+function boardPts(teamIdx){
+  return FM.revealed[teamIdx].reduce((sum,qr,qi)=>
+    sum + qr.reduce((s,rev,ai)=> s + (rev ? FM_QUESTIONS[qi].ans[ai].p : 0), 0)
+  , 0);
+}
+
+// Combined total for a team (P1 locked + current board)
+function combinedPts(teamIdx){
+  return FM.p1pts[teamIdx] + boardPts(teamIdx);
+}
+
+function renderFastMoney(){
+  const turn      = FM.turn;
+  const teamIdx   = currentTeamIdx();
+  const playerNum = currentPlayerNum();
+  const team      = FM.qualifiers[teamIdx];
+
+  // ── Header context ────────────────────────────────────────────────────────
+  const ctxLabel = document.getElementById('fm-context-label');
+  if(ctxLabel) ctxLabel.textContent =
+    (team ? team.t.name.toUpperCase() : 'TEAM '+(teamIdx+1)) + ' · PLAYER ' + playerNum;
+
+  // ── Timer ─────────────────────────────────────────────────────────────────
+  document.getElementById('fm-timer').textContent = FM.timerVal;
+  document.getElementById('fm-timer').className = 'fm-timer' + (FM.timerVal <= 7 ? ' low' : '');
+  const timerLabel = document.getElementById('fm-timer-label');
+  if(timerLabel) timerLabel.textContent = FM_TURN_TIMES[turn] + ' SECS';
+
+  // ── Progress dots ─────────────────────────────────────────────────────────
+  const stepLabels = ['T1 P1','T1 P2','T2 P1','T2 P2'];
+  const dotsEl = document.getElementById('fm-step-dots');
+  if(dotsEl) dotsEl.innerHTML = stepLabels.map((lbl,i)=>`
+    <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
+      <div style="width:26px;height:26px;border-radius:50%;
+        border:2px solid ${i===turn?'var(--gold)':i<turn?'var(--green2)':'rgba(255,255,255,.2)'};
+        background:${i===turn?'var(--gold)':i<turn?'var(--green)':'transparent'};
+        display:flex;align-items:center;justify-content:center;
+        font-family:'Bebas Neue',sans-serif;font-size:13px;
+        color:${i===turn?'var(--navy)':i<turn?'var(--white)':'rgba(255,255,255,.4)'};">
+        ${i<turn?'✓':i+1}
+      </div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:1px;
+        color:${i===turn?'var(--gold)':'rgba(255,255,255,.35)'};">${lbl}</div>
+    </div>`).join('');
+
+  // ── Qualifier strip ───────────────────────────────────────────────────────
+  document.getElementById('fm-qualifier-strip').innerHTML = FM.qualifiers.map((q,pi)=>{
+    const isActive   = pi === teamIdx;
+    const isDone     = pi < teamIdx || (pi === teamIdx && turn === (pi===0?2:4));
+    const combined   = combinedPts(pi);
+    const hits200    = combined >= FM_TARGET;
+    return `<div class="fm-qual-chip ${isActive?'active':''}">
+      <div>
+        <div class="fm-player-label">
+          ${isActive
+            ? (playerNum===1 ? '▶ Player 1 playing' : '▶ Player 2 playing')
+            : (isDone ? '✓ Done' : 'Up next')}
+        </div>
+        <div class="fm-player-name" style="color:${q.t.color}">${q.t.name}</div>
+        <div class="fm-player-label">${q.t.size} players</div>
+      </div>
+      <div style="text-align:right">
+        ${FM.p1pts[pi] > 0 || isActive
+          ? `<div style="font-family:'Bebas Neue',sans-serif;font-size:13px;color:var(--text-dim)">P1: ${FM.p1pts[pi]} pts</div>` : ''}
+        <div class="fm-player-score" style="color:${hits200?'var(--green2)':'var(--gold)'}">
+          ${combined > 0 ? combined + ' pts' + (hits200?' 🎉':'') : ''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // ── Answer board ──────────────────────────────────────────────────────────
+  document.getElementById('fm-body').innerHTML = FM_QUESTIONS.map((fq,qi)=>{
+    const revd = FM.revealed[teamIdx][qi];
+    const qpts = revd.reduce((s,r,ai)=>s+(r?fq.ans[ai].p:0),0);
+    return `<div class="fm-question-block">
+      <div class="fm-q-header" onclick="toggleFmQ(${qi})">
+        <div class="fm-q-num">${qi+1}</div>
+        <div class="fm-q-text">${fq.q}</div>
+        ${qpts > 0 ? `<div class="fm-q-pts">${qpts} pts</div>` : ''}
+      </div>
+      <div class="fm-answers" id="fmq-${qi}">
+        ${fq.ans.map((a,ai)=>`
+          <div class="fm-tile ${revd[ai]?'revealed':''}" onclick="toggleFmTile(${qi},${ai})">
+            <span class="fm-tile-num">${ai+1}</span>
+            ${revd[ai]
+              ? `<span class="fm-tile-text">${a.t}</span><span class="fm-tile-pts">${a.p}</span>`
+              : `<span class="fm-tile-hidden-text">???</span>`}
+          </div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+
+  // ── Buttons ───────────────────────────────────────────────────────────────
+  const nextBtn   = document.getElementById('fm-next-btn');
+  const finishBtn = document.getElementById('fm-finish-btn');
+  const isLastTurn = turn === 3;
+
+  if(nextBtn){
+    nextBtn.style.display = isLastTurn ? 'none' : '';
+    if(!isLastTurn){
+      const labels = [
+        `▶▶ Lock in Player 1 — clear board for Player 2`,
+        `▶▶ Tally Team 1 — move to ${FM.qualifiers[1]?FM.qualifiers[1].t.name:'Team 2'}`,
+        `▶▶ Lock in Player 1 — clear board for Player 2`,
+      ];
+      nextBtn.textContent = labels[turn] || '▶▶ Next';
+    }
+  }
+  if(finishBtn) finishBtn.style.display = isLastTurn ? '' : 'none';
+}
+
+// ── Tile interaction ──────────────────────────────────────────────────────────
+function toggleFmTile(qi,ai){
+  FM.revealed[currentTeamIdx()][qi][ai] = !FM.revealed[currentTeamIdx()][qi][ai];
+  renderFastMoney();
+}
+function toggleFmQ(qi){
+  const el = document.getElementById('fmq-'+qi);
+  el.style.display = el.style.display==='none' ? '' : 'none';
+}
+
+// ── Timer ─────────────────────────────────────────────────────────────────────
+let fmTimerRef = null;
+function startTimer(){
+  if(FM.timerRunning) return;
+  FM.timerRunning = true;
+  fmTimerRef = setInterval(()=>{
+    FM.timerVal--;
+    const el = document.getElementById('fm-timer');
+    el.textContent = FM.timerVal;
+    el.className = 'fm-timer' + (FM.timerVal <= 7 ? ' low' : '');
+    if(FM.timerVal <= 0) stopTimer();
+  }, 1000);
+}
+function stopTimer(){ FM.timerRunning = false; clearInterval(fmTimerRef); }
+function resetTimer(){
+  stopTimer();
+  FM.timerVal = FM_TURN_TIMES[FM.turn];
+  const el = document.getElementById('fm-timer');
+  el.textContent = FM.timerVal;
+  el.className = 'fm-timer';
+}
+
+// ── Advance turns ─────────────────────────────────────────────────────────────
+function confirmNextFmRound(){
+  stopTimer();
+  const teamIdx = currentTeamIdx();
+
+  if(FM.turn === 0){
+    // T1P1 done → lock P1 score, CLEAR board for P2
+    FM.p1pts[0]   = boardPts(0);
+    FM.teamPts[0] = FM.p1pts[0];
+    FM.revealed[0] = FM_QUESTIONS.map(q=>new Array(q.ans.length).fill(false));
+    FM.turn = 1;
+    FM.timerVal = FM_TURN_TIMES[1];
+
+  } else if(FM.turn === 1){
+    // T1P2 done → tally team 1 combined, move to Team 2 P1
+    FM.teamPts[0] = FM.p1pts[0] + boardPts(0);
+    FM.revealed[1] = FM_QUESTIONS.map(q=>new Array(q.ans.length).fill(false));
+    FM.turn = 2;
+    FM.timerVal = FM_TURN_TIMES[2];
+
+  } else if(FM.turn === 2){
+    // T2P1 done → lock P1 score, CLEAR board for P2
+    FM.p1pts[1]   = boardPts(1);
+    FM.teamPts[1] = FM.p1pts[1];
+    FM.revealed[1] = FM_QUESTIONS.map(q=>new Array(q.ans.length).fill(false));
+    FM.turn = 3;
+    FM.timerVal = FM_TURN_TIMES[3];
+  }
+
+  renderFastMoney();
+}
+
+function nextFmRound(){ confirmNextFmRound(); }
+
+// ── End Fast Money ────────────────────────────────────────────────────────────
+function endFastMoney(){
+  stopTimer();
+
+  // Always finalise both teams' totals from what was revealed
+  if(FM.turn === 1){
+    // Host clicked finish mid-T1P2 — tally T1 now
+    FM.teamPts[0] = FM.p1pts[0] + boardPts(0);
+  } else if(FM.turn === 2){
+    // Between T1 done and T2 starting — T1 already tallied, T2 = 0
+    FM.teamPts[1] = 0;
+  } else if(FM.turn === 3){
+    // Normal end: T2P2 just finished — tally T2
+    FM.teamPts[1] = FM.p1pts[1] + boardPts(1);
+  }
+  // If turn=0, team 1 not even done — both 0 (edge case: host forces end early)
+
+  FM.totalPts = [...FM.teamPts]; // compat
+
+  // Determine winner of Fast Money
+  const t1 = FM.teamPts[0];
+  const t2 = FM.teamPts[1];
+  const team1hits = t1 >= FM_TARGET;
+  const team2hits = t2 >= FM_TARGET;
+
+  // Award points to BOTH teams based on what they scored in FM
+  // Winner = whoever scored more (or first to 200). Points added to overall scoreboard.
+  if(FM.qualifiers[0]) G.scores[FM.qualifiers[0].i] += t1;
+  if(FM.qualifiers[1]) G.scores[FM.qualifiers[1].i] += t2;
+
+  showFinal();
+}
+
+
+// ── FINAL ─────────────────────────────────────────────────────────────────────
+function showFinal(){
+  show('s-final');
+  const ranked=[...G.teams.map((t,i)=>({name:t.name,color:t.color,size:t.size,score:G.scores[i]}))].sort((a,b)=>b.score-a.score);
+  document.getElementById('f-winner').textContent=ranked[0].name+' wins!';
+  const gap=ranked[0].score-ranked[1].score;
+  document.getElementById('f-margin').textContent=gap>0?`by ${gap} points`:`tied on points`;
+  const medals=['1st 🥇','2nd 🥈','3rd 🥉','4th','5th','6th','7th','8th'];
+  document.getElementById('podium').innerHTML=ranked.map((t,i)=>`
+    <div class="pod-row ${i===0?'first':''}">
+      <div class="pod-rank">${medals[i]||i+1}</div>
+      <div class="pod-dot" style="background:${t.color}"></div>
+      <div class="pod-name">${t.name} <span class="pod-size">${t.size} players</span></div>
+      <div class="pod-score">${t.score}</div>
+    </div>`).join('');
+}
+
+function resetGame(){ show('s-setup'); }
+
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if(id==='s-rounds') buildRoundList();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// QUESTION EDITOR — clean closure-based, no data attributes
+// ═══════════════════════════════════════════════════════════════
+let QE = null;   // { rounds: [...], fm: [...], activeTab: 'rounds' }
+
+function deepClone(x){ return JSON.parse(JSON.stringify(x)); }
+
+function goToQEdit(){
+  if(!QE){
+    QE = { rounds: deepClone(ROUNDS), fm: deepClone(FM_QUESTIONS), activeTab: 'rounds' };
+  }
+  qeRenderAll();
+  show('s-qedit');
+}
+
+function qeShowTab(tab){
+  QE.activeTab = tab;
+  document.getElementById('qe-rounds-panel').style.display = tab === 'rounds' ? 'flex' : 'none';
+  document.getElementById('qe-fm-panel').style.display     = tab === 'fm'     ? 'flex' : 'none';
+  document.getElementById('qetab-rounds').classList.toggle('active', tab === 'rounds');
+  document.getElementById('qetab-fm').classList.toggle('active', tab === 'fm');
+  // Update add-question button label
+  document.getElementById('qe-add-q-btn').textContent =
+    tab === 'rounds' ? '+ Add Round Question' : '+ Add Fast Money Question';
+  updateTabLabels();
+}
+
+function updateTabLabels(){
+  document.getElementById('qetab-rounds').textContent = '📋 Rounds (' + QE.rounds.length + ')';
+  document.getElementById('qetab-fm').textContent     = '⚡ Fast Money (' + QE.fm.length + ')';
+}
+
+// ── Read all current DOM values back into QE data ──────────────────────────
+function qeFlush(){
+  ['rounds','fm'].forEach(function(tab){
+    var list  = tab === 'rounds' ? QE.rounds : QE.fm;
+    var panel = document.getElementById('qe-' + tab + '-panel');
+    var cards = panel.querySelectorAll('.qe-card');
+    cards.forEach(function(card, i){
+      if(i >= list.length) return;
+      if(tab === 'rounds'){
+        var catEl  = card.querySelector('.qe-cat-inp');
+        var multEl = card.querySelector('.qe-mult-sel');
+        if(catEl)  list[i].cat  = catEl.value;
+        if(multEl) list[i].mult = parseInt(multEl.value);
+      }
+      var qEl = card.querySelector('.qe-q-inp');
+      if(qEl) list[i].q = qEl.value;
+      var ansRows = card.querySelectorAll('.qe-ans-row');
+      ansRows.forEach(function(row, ai){
+        if(ai >= list[i].ans.length) return;
+        var tEl = row.querySelector('.qe-ans-inp');
+        var pEl = row.querySelector('.qe-pts-inp');
+        if(tEl) list[i].ans[ai].t = tEl.value;
+        if(pEl) list[i].ans[ai].p = parseInt(pEl.value) || 0;
+      });
+    });
+  });
+}
+
+// ── Render everything ──────────────────────────────────────────────────────
+function qeRenderAll(){
+  qeRenderPanel('rounds');
+  qeRenderPanel('fm');
+  qeShowTab(QE.activeTab || 'rounds');
+}
+
+function qeRenderPanel(tab){
+  var list    = tab === 'rounds' ? QE.rounds : QE.fm;
+  var panel   = document.getElementById('qe-' + tab + '-panel');
+  panel.innerHTML = '';
+
+  list.forEach(function(item, ri){
+    panel.appendChild(qeBuildCard(tab, list, ri));
+  });
+}
+
+function qeBuildCard(tab, list, ri){
+  var item = list[ri];
+  var isRounds = tab === 'rounds';
+
+  // ── Card container ──────────────────────────────────────────────────────
+  var card = document.createElement('div');
+  card.className = 'qe-card';
+
+  // ── Header row ──────────────────────────────────────────────────────────
+  var header = document.createElement('div');
+  header.className = 'qe-card-header';
+
+  var numEl = document.createElement('div');
+  numEl.className = 'qe-num';
+  numEl.textContent = ri + 1;
+  header.appendChild(numEl);
+
+  if(isRounds){
+    var catInp = document.createElement('input');
+    catInp.className = 'qe-cat-inp';
+    catInp.placeholder = 'Category';
+    catInp.value = item.cat || '';
+    header.appendChild(catInp);
+
+    var multSel = document.createElement('select');
+    multSel.className = 'qe-mult-sel';
+    [1,2,3].forEach(function(v){
+      var opt = document.createElement('option');
+      opt.value = v;
+      opt.textContent = '×' + v;
+      if(v === item.mult) opt.selected = true;
+      multSel.appendChild(opt);
+    });
+    header.appendChild(multSel);
+  }
+
+  // DELETE QUESTION BUTTON — closure captures tab + ri + list reference
+  var delQBtn = document.createElement('button');
+  delQBtn.className = 'qe-del-q-btn';
+  delQBtn.textContent = '🗑 Delete';
+  delQBtn.addEventListener('click', function(){
+    if(list.length <= 1){ alert('You need at least 1 question.'); return; }
+    qeFlush();
+    list.splice(ri, 1);
+    qeRenderPanel(tab);
+    updateTabLabels();
+  });
+  header.appendChild(delQBtn);
+  card.appendChild(header);
+
+  // ── Question textarea ───────────────────────────────────────────────────
+  var qInp = document.createElement('textarea');
+  qInp.className = 'qe-q-inp';
+  qInp.rows = 2;
+  qInp.placeholder = 'Type your question here…';
+  qInp.value = item.q || '';
+  card.appendChild(qInp);
+
+  // ── Answers grid ────────────────────────────────────────────────────────
+  var ansGrid = document.createElement('div');
+  ansGrid.className = 'qe-ans-grid';
+
+  item.ans.forEach(function(ans, ai){
+    ansGrid.appendChild(qeBuildAnsRow(tab, list, ri, ai, ansGrid));
+  });
+  card.appendChild(ansGrid);
+
+  // ── Points total bar ────────────────────────────────────────────────────
+  var ptsBar = document.createElement('div');
+  ptsBar.className = 'qe-pts-bar';
+  var ptsLabel = document.createElement('span');
+  ptsLabel.className = 'qe-pts-label';
+  ptsBar.appendChild(ptsLabel);
+  card.appendChild(ptsBar);
+
+  function refreshPtsBar(){
+    var total = 0;
+    card.querySelectorAll('.qe-pts-inp').forEach(function(el){ total += parseInt(el.value)||0; });
+    var over = total > 100;
+    ptsLabel.style.color = over ? '#ff8080' : total === 100 ? 'var(--green2)' : 'var(--text-dim)';
+    ptsLabel.textContent = (over ? '⚠ ' : '') + 'Total: ' + total + ' / 100 pts';
+  }
+  refreshPtsBar();
+
+  // Hook pts inputs to refresh bar
+  card.querySelectorAll('.qe-pts-inp').forEach(function(el){
+    el.addEventListener('input', refreshPtsBar);
+  });
+
+  // ── Add answer button ───────────────────────────────────────────────────
+  var addAnsBtn = document.createElement('button');
+  addAnsBtn.className = 'qe-add-ans-btn';
+  addAnsBtn.textContent = '+ Add answer';
+  addAnsBtn.addEventListener('click', function(){
+    if(item.ans.length >= 8){ alert('Maximum 8 answers per question.'); return; }
+    qeFlush();
+    item.ans.push({t:'', p:5});
+    // Re-render just this card's answers
+    var newRow = qeBuildAnsRow(tab, list, ri, item.ans.length - 1, ansGrid);
+    ansGrid.appendChild(newRow);
+    refreshPtsBar();
+    newRow.querySelector('.qe-ans-inp').focus();
+  });
+  card.appendChild(addAnsBtn);
+
+  return card;
+}
+
+function qeBuildAnsRow(tab, list, ri, ai, ansGrid){
+  var item = list[ri];
+  var ans  = item.ans[ai];
+
+  var row = document.createElement('div');
+  row.className = 'qe-ans-row';
+
+  var numEl = document.createElement('div');
+  numEl.className = 'qe-ans-num';
+  numEl.textContent = (ai + 1) + '.';
+  row.appendChild(numEl);
+
+  var tInp = document.createElement('input');
+  tInp.className = 'qe-ans-inp';
+  tInp.placeholder = 'Answer ' + (ai + 1);
+  tInp.value = ans.t || '';
+  row.appendChild(tInp);
+
+  var pInp = document.createElement('input');
+  pInp.className = 'qe-pts-inp';
+  pInp.type = 'number';
+  pInp.min = 1;
+  pInp.max = 99;
+  pInp.value = ans.p || 5;
+  row.appendChild(pInp);
+
+  // DELETE ANSWER BUTTON — closure captures ai
+  var delABtn = document.createElement('button');
+  delABtn.className = 'qe-del-a-btn';
+  delABtn.textContent = '✕';
+  delABtn.title = 'Remove answer';
+  delABtn.addEventListener('click', function(){
+    if(item.ans.length <= 2){ alert('Keep at least 2 answers.'); return; }
+    qeFlush();
+    item.ans.splice(ai, 1);
+    // Re-render the card by removing and rebuilding it
+    var panel   = document.getElementById('qe-' + tab + '-panel');
+    var cards   = panel.querySelectorAll('.qe-card');
+    var oldCard = cards[ri];
+    var newCard = qeBuildCard(tab, list, ri);
+    panel.replaceChild(newCard, oldCard);
+  });
+  row.appendChild(delABtn);
+
+  return row;
+}
+
+function qeAddQuestion(){
+  qeFlush();
+  var tab  = QE.activeTab || 'rounds';
+  var list = tab === 'rounds' ? QE.rounds : QE.fm;
+  var blank = tab === 'rounds'
+    ? {cat:'', mult:1, q:'', ans:[{t:'',p:30},{t:'',p:25},{t:'',p:18},{t:'',p:12},{t:'',p:10},{t:'',p:5}]}
+    : {q:'', ans:[{t:'',p:30},{t:'',p:25},{t:'',p:20},{t:'',p:15},{t:'',p:10}]};
+  list.push(blank);
+  var panel = document.getElementById('qe-' + tab + '-panel');
+  var newCard = qeBuildCard(tab, list, list.length - 1);
+  panel.appendChild(newCard);
+  newCard.scrollIntoView({behavior:'smooth'});
+  updateTabLabels();
+}
+
+function qeReset(){
+  if(!confirm('Reset all questions back to the defaults?')) return;
+  QE = { rounds: deepClone(ROUNDS), fm: deepClone(FM_QUESTIONS), activeTab: QE ? QE.activeTab : 'rounds' };
+  qeRenderAll();
+}
+
+function qeLaunch(){
+  qeFlush();
+  // Validate points
+  var errors = [];
+  QE.rounds.forEach(function(r, i){
+    var tot = r.ans.reduce(function(s,a){ return s + (parseInt(a.p)||0); }, 0);
+    if(tot > 100) errors.push('Round ' + (i+1) + ' \u2014 ' + (r.q||'untitled').slice(0,40) + ': ' + tot + ' pts');
+  });
+  QE.fm.forEach(function(r, i){
+    var tot = r.ans.reduce(function(s,a){ return s + (parseInt(a.p)||0); }, 0);
+    if(tot > 100) errors.push('Fast Money Q' + (i+1) + ' \u2014 ' + (r.q||'untitled').slice(0,40) + ': ' + tot + ' pts');
+  });
+  if(errors.length > 0){
+    showPtsWarning(errors);
+    return;
+  }
+  startGame();
+}
+
+function showPtsWarning(errors){
+  var old = document.getElementById('pts-warning-overlay');
+  if(old) old.remove();
+  var overlay = document.createElement('div');
+  overlay.id = 'pts-warning-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(10,22,40,.92);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1.5rem;';
+  overlay.innerHTML =
+    '<div style="background:var(--navy2);border:2px solid var(--gold);border-radius:14px;padding:1.5rem 1.8rem;max-width:520px;width:100%;">' +
+      '<div style="font-family:Bebas Neue,sans-serif;font-size:26px;color:var(--gold);letter-spacing:2px;margin-bottom:6px;">\u26a0 Points Over 100</div>' +
+      '<div style="font-family:Barlow Condensed,sans-serif;font-size:14px;color:rgba(255,255,255,.8);margin-bottom:12px;line-height:1.5;">Each question\'s answers must total <strong style=\"color:var(--gold)\">100 pts or less</strong>. These questions are over the limit:</div>' +
+      '<div style="background:rgba(200,41,46,.1);border:1px solid rgba(200,41,46,.3);border-radius:8px;padding:10px 14px;margin-bottom:16px;">' +
+        errors.map(function(e){ return '<div style="font-family:Barlow Condensed,sans-serif;font-size:13px;color:#ff8080;padding:3px 0;">\u2715 ' + e + '</div>'; }).join('') +
+      '</div>' +
+      '<div style="display:flex;gap:8px;">' +
+        '<button id="pts-fix-btn" style="flex:1;padding:11px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:transparent;color:var(--white);font-family:Barlow Condensed,sans-serif;font-size:14px;font-weight:600;letter-spacing:1px;cursor:pointer;">\u2190 Fix Points</button>' +
+        '<button id="pts-anyway-btn" style="flex:1;padding:11px;border-radius:8px;border:none;background:rgba(200,41,46,.4);color:var(--white);font-family:Barlow Condensed,sans-serif;font-size:14px;font-weight:600;letter-spacing:1px;cursor:pointer;">Start Anyway</button>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(overlay);
+  document.getElementById('pts-fix-btn').addEventListener('click', function(){ overlay.remove(); });
+  document.getElementById('pts-anyway-btn').addEventListener('click', function(){ overlay.remove(); startGame(); });
+}
+
+// ── Patch startGame / loadRound / etc. to use QE data ─────────────────────
+var _origStartGame = startGame;
+startGame = function(){
+  // If QE has been set up, use its data; otherwise use defaults
+  var activeRounds = (QE && QE.rounds) ? QE.rounds : ROUNDS;
+  var activeFM     = (QE && QE.fm)     ? QE.fm     : FM_QUESTIONS;
+
+  G.teams = [];
+  for(var i=0;i<setupTeamCount;i++){
+    var name  = (document.getElementById('tname-'+i).value||'').trim() || DEFAULTS[i] || 'Team '+(i+1);
+    var size  = parseInt(document.getElementById('tsize-'+i).value) || 6;
+    var color = setupColors[i] || PALETTE[i%PALETTE.length];
+    G.teams.push({name:name, color:color, size:size});
+  }
+  G.scores = G.teams.map(function(){ return 0; });
+  G.cur = 0; G.awarded = new Set();
+  show('s-game');
+  _loadRound(0, activeRounds);
+};
+
+function _loadRound(i, activeRounds){
+  var r = activeRounds[i];
+  G.strikes=0; G.revealed=r.ans.map(function(){ return false; }); G.rndPts=0; G.stealMode=false;
+  document.getElementById('steal-overlay').classList.remove('on');
+  _renderHeader(i, activeRounds);
+  document.getElementById('g-cat').textContent = r.cat.toUpperCase();
+  document.getElementById('g-q').textContent = r.q;
+  var pill = document.getElementById('g-mult-pill');
+  if(r.mult>1){ pill.style.display='block'; pill.textContent='\xd7'+r.mult+' MULTIPLIER'; }
+  else pill.style.display='none';
+  document.getElementById('g-rndpts').textContent='0 pts';
+  renderStrikes(); _renderTiles(activeRounds); renderQualBar(); _renderScores(i, activeRounds);
+}
+
+function _renderHeader(ri, activeRounds){
+  var matchup = getMatchup(ri);
+  var ai=matchup[0], bi=matchup[1];
+  var parts = G.teams.map(function(t,i){
+    var playing = i===ai||i===bi;
+    var qual = G.scores[i] >= QUALIFY_CUTOFF;
+    return '<div class="team-panel '+(playing?'playing':'')+'">'+
+      '<div class="team-label">'+(playing?'Playing':'Watching')+'</div>'+
+      '<div class="team-name-display">'+t.name+'</div>'+
+      '<div class="team-score-display">'+G.scores[i]+'</div>'+
+      '<div class="team-size-badge">'+t.size+' players</div>'+
+      (qual?'<div class="qualified-badge">\u2713 Qualified</div>':'')+
+    '</div>';
+  });
+  parts.splice(Math.ceil(G.teams.length/2), 0,
+    '<div class="center-panel"><div class="round-badge">Round</div>'+
+    '<div class="round-number">'+(ri+1)+'<span style="font-size:14px;color:var(--text-dim)">/'+(activeRounds.length)+'</span></div></div>'
+  );
+  document.getElementById('game-top').innerHTML = parts.join('');
+}
+
+function _renderTiles(activeRounds){
+  var r = activeRounds[G.cur];
+  document.getElementById('g-tiles').innerHTML = r.ans.map(function(a,i){
+    return '<div class="tile '+(G.revealed[i]?'flipped':'')+'" onclick="toggleTile('+i+')">'+
+      '<div class="tile-inner">'+
+        '<div class="tile-front"><span class="tile-num-hidden">'+(i+1)+'</span></div>'+
+        '<div class="tile-back">'+
+          '<span class="tile-num-reveal">'+(i+1)+'</span>'+
+          '<span class="tile-text">'+a.t+'</span>'+
+          '<span class="tile-pts">'+(a.p*r.mult)+'</span>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+function _renderScores(ri, activeRounds){
+  var sorted = G.scores.map(function(s,i){ return {s:s,i:i}; }).sort(function(a,b){ return b.s-a.s; });
+  var top2idx = sorted.slice(0,2).map(function(x){ return x.i; });
+  var matchup = getMatchup(ri);
+  var ai=matchup[0], bi=matchup[1];
+  document.getElementById('scores-strip').innerHTML = G.teams.map(function(t,i){
+    var key=ri+'_'+i, isAwarded=G.awarded.has(key);
+    var playing=i===ai||i===bi;
+    var qual=G.scores[i]>=QUALIFY_CUTOFF;
+    var isTop=top2idx.includes(i);
+    return '<div class="score-chip '+(playing?'playing':'')+' '+(qual&&isTop?'top-qualifier':qual?'qualified':'')+'">' +
+      '<div class="chip-dot" style="background:'+t.color+'"></div>'+
+      '<div class="chip-name">'+t.name+'</div>'+
+      (qual?'<div class="chip-q-badge">FM</div>':'')+
+      '<div class="chip-score">'+G.scores[i]+'</div>'+
+      '<button class="chip-award '+(isAwarded?'awarded':'')+'" onclick="awardTo('+i+')">'+(isAwarded?'\u2713':'Award')+'</button>'+
+    '</div>';
+  }).join('');
+}
+
+// Patch the existing game functions that reference ROUNDS directly
+var _origToggleTile = toggleTile;
+toggleTile = function(i){
+  var r = (QE&&QE.rounds) ? QE.rounds[G.cur] : ROUNDS[G.cur];
+  G.revealed[i]=!G.revealed[i];
+  if(G.revealed[i]) G.rndPts+=r.ans[i].p*r.mult;
+  else{ G.rndPts-=r.ans[i].p*r.mult; if(G.rndPts<0)G.rndPts=0; }
+  document.getElementById('g-rndpts').textContent=G.rndPts+' pts';
+  _renderTiles((QE&&QE.rounds) ? QE.rounds : ROUNDS);
+};
+
+var _origRevealAll = revealAll;
+revealAll = function(){
+  var r = (QE&&QE.rounds) ? QE.rounds[G.cur] : ROUNDS[G.cur];
+  G.rndPts=0;
+  G.revealed=r.ans.map(function(){ return true; });
+  r.ans.forEach(function(a){ G.rndPts+=a.p*r.mult; });
+  document.getElementById('g-rndpts').textContent=G.rndPts+' pts';
+  _renderTiles((QE&&QE.rounds) ? QE.rounds : ROUNDS);
+};
+
+var _origNextRound = nextRound;
+nextRound = function(){
+  var activeRounds = (QE&&QE.rounds) ? QE.rounds : ROUNDS;
+  var hasAward=G.teams.some(function(_,i){ return G.awarded.has(G.cur+'_'+i); });
+  if(!hasAward&&!confirm('No points awarded for this round — continue anyway?')) return;
+  var next=G.cur+1;
+  if(next>=activeRounds.length){ initFastMoney(); return; }
+  G.cur=next; _loadRound(next, activeRounds);
+};
+
+var _origBuildRoundList = buildRoundList;
+buildRoundList = function(){
+  var activeRounds = (QE&&QE.rounds) ? QE.rounds : ROUNDS;
+  document.getElementById('rounds-grid').innerHTML = activeRounds.map(function(r,i){
+    var done=G.teams.some(function(_,ti){ return G.awarded.has(i+'_'+ti); })||(i<G.cur);
+    var badge=r.mult>1?'<div class="rc-badge">\xd7'+r.mult+'</div>':'';
+    return '<div class="round-card '+(done?'done':'')+' '+(i===G.cur?'current':'')+'" onclick="jumpToRound('+i+')">'+
+      '<div class="rc-num">'+(i+1)+'</div>'+
+      '<div class="rc-info"><div class="rc-cat">'+r.cat+'</div><div class="rc-q">'+r.q+'</div></div>'+
+      badge+
+    '</div>';
+  }).join('') +
+  '<div class="round-card" onclick="initFastMoney()">'+
+    '<div class="rc-num">FM</div>'+
+    '<div class="rc-info"><div class="rc-cat">Fast Money</div><div class="rc-q">Quick-fire questions</div></div>'+
+    '<div class="rc-fm">FINALE</div>'+
+  '</div>';
+};
+
+function jumpToRound(i){ G.cur=i; _loadRound(i, (QE&&QE.rounds)?QE.rounds:ROUNDS); show('s-game'); }
+
+// Patch initFastMoney + renderFastMoney + boardPts to use QE.fm
+var _origInitFM = initFastMoney;
+initFastMoney = function(){
+  var activeFM = (QE&&QE.fm) ? QE.fm : FM_QUESTIONS;
+  var ranked = G.teams.map(function(t,i){ return {t:t,i:i,s:G.scores[i]}; }).sort(function(a,b){ return b.s-a.s; });
+  var qualRanked = ranked.filter(function(x){ return x.s >= QUALIFY_CUTOFF; });
+  FM.qualifiers = qualRanked.length >= 2 ? qualRanked.slice(0,2) : ranked.slice(0,2);
+  FM.turn=0; FM.timerVal=FM_TURN_TIMES[0]; FM.timerRunning=false; clearInterval(fmTimerRef);
+  FM.revealed=[
+    activeFM.map(function(q){ return new Array(q.ans.length).fill(false); }),
+    activeFM.map(function(q){ return new Array(q.ans.length).fill(false); })
+  ];
+  FM.p1pts=[0,0]; FM.teamPts=[0,0]; FM.totalPts=[0,0];
+  show('s-fastmoney');
+  renderFastMoney();
+};
+
+var _origBoardPts = boardPts;
+boardPts = function(teamIdx){
+  var activeFM = (QE&&QE.fm) ? QE.fm : FM_QUESTIONS;
+  return FM.revealed[teamIdx].reduce(function(sum,qr,qi){
+    return sum + qr.reduce(function(s,rev,ai){ return s+(rev?activeFM[qi].ans[ai].p:0); }, 0);
+  }, 0);
+};
+
+var _origRenderFM = renderFastMoney;
+renderFastMoney = function(){
+  var activeFM = (QE&&QE.fm) ? QE.fm : FM_QUESTIONS;
+  var turn=FM.turn, teamIdx=currentTeamIdx(), playerNum=currentPlayerNum();
+  var team=FM.qualifiers[teamIdx];
+
+  var ctxLabel=document.getElementById('fm-context-label');
+  if(ctxLabel) ctxLabel.textContent=(team?team.t.name.toUpperCase():'TEAM '+(teamIdx+1))+' \u00b7 PLAYER '+playerNum;
+
+  document.getElementById('fm-timer').textContent=FM.timerVal;
+  document.getElementById('fm-timer').className='fm-timer'+(FM.timerVal<=7?' low':'');
+  var timerLabel=document.getElementById('fm-timer-label');
+  if(timerLabel) timerLabel.textContent=FM_TURN_TIMES[turn]+' SECS';
+
+  var stepLabels=['T1 P1','T1 P2','T2 P1','T2 P2'];
+  var dotsEl=document.getElementById('fm-step-dots');
+  if(dotsEl) dotsEl.innerHTML=stepLabels.map(function(lbl,i){
+    return '<div style="display:flex;flex-direction:column;align-items:center;gap:3px">'+
+      '<div style="width:26px;height:26px;border-radius:50%;'+
+        'border:2px solid '+(i===turn?'var(--gold)':i<turn?'var(--green2)':'rgba(255,255,255,.2)')+';'+
+        'background:'+(i===turn?'var(--gold)':i<turn?'var(--green)':'transparent')+';'+
+        'display:flex;align-items:center;justify-content:center;'+
+        'font-family:Bebas Neue,sans-serif;font-size:13px;'+
+        'color:'+(i===turn?'var(--navy)':i<turn?'var(--white)':'rgba(255,255,255,.4)')+';">'+
+        (i<turn?'\u2713':i+1)+
+      '</div>'+
+      '<div style="font-family:Barlow Condensed,sans-serif;font-size:10px;letter-spacing:1px;'+
+        'color:'+(i===turn?'var(--gold)':'rgba(255,255,255,.35)')+';">'+lbl+'</div>'+
+    '</div>';
+  }).join('');
+
+  document.getElementById('fm-qualifier-strip').innerHTML=FM.qualifiers.map(function(q,pi){
+    var isActive=pi===teamIdx;
+    var isDone=pi<teamIdx||(pi===teamIdx&&turn===(pi===0?2:4));
+    var combined=combinedPts(pi);
+    var hits=combined>=FM_TARGET;
+    return '<div class="fm-qual-chip '+(isActive?'active':'')+'">'+
+      '<div>'+
+        '<div class="fm-player-label">'+(isActive?(playerNum===1?'\u25b6 Player 1 playing':'\u25b6 Player 2 playing'):(isDone?'\u2713 Done':'Up next'))+'</div>'+
+        '<div class="fm-player-name" style="color:'+q.t.color+'">'+q.t.name+'</div>'+
+        '<div class="fm-player-label">'+q.t.size+' players</div>'+
+      '</div>'+
+      '<div style="text-align:right">'+
+        (FM.p1pts[pi]>0||isActive?'<div style="font-family:Bebas Neue,sans-serif;font-size:13px;color:var(--text-dim)">P1: '+FM.p1pts[pi]+' pts</div>':'')+
+        '<div class="fm-player-score" style="color:'+(hits?'var(--green2)':'var(--gold)')+'">'+
+          (combined>0?combined+' pts'+(hits?' \uD83C\uDF89':''):'')+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+
+  document.getElementById('fm-body').innerHTML=activeFM.map(function(fq,qi){
+    var revd=FM.revealed[teamIdx][qi];
+    var qpts=revd.reduce(function(s,r,ai){ return s+(r?fq.ans[ai].p:0); },0);
+    return '<div class="fm-question-block">'+
+      '<div class="fm-q-header" onclick="toggleFmQ('+qi+')">'+
+        '<div class="fm-q-num">'+(qi+1)+'</div>'+
+        '<div class="fm-q-text">'+fq.q+'</div>'+
+        (qpts>0?'<div class="fm-q-pts">'+qpts+' pts</div>':'')+
+      '</div>'+
+      '<div class="fm-answers" id="fmq-'+qi+'">'+
+        fq.ans.map(function(a,ai){
+          return '<div class="fm-tile '+(revd[ai]?'revealed':'')+'" onclick="toggleFmTile('+qi+','+ai+')">'+
+            '<span class="fm-tile-num">'+(ai+1)+'</span>'+
+            (revd[ai]
+              ?'<span class="fm-tile-text">'+a.t+'</span><span class="fm-tile-pts">'+a.p+'</span>'
+              :'<span class="fm-tile-hidden-text">???</span>')+
+          '</div>';
+        }).join('')+
+      '</div>'+
+    '</div>';
+  }).join('');
+
+  var nextBtn=document.getElementById('fm-next-btn');
+  var finishBtn=document.getElementById('fm-finish-btn');
+  var isLast=turn===3;
+  if(nextBtn){
+    nextBtn.style.display=isLast?'none':'';
+    if(!isLast){
+      var labels=['\u25b6\u25b6 Lock in Player 1 \u2014 clear board for Player 2',
+        '\u25b6\u25b6 Tally Team 1 \u2014 move to '+(FM.qualifiers[1]?FM.qualifiers[1].t.name:'Team 2'),
+        '\u25b6\u25b6 Lock in Player 1 \u2014 clear board for Player 2'];
+      nextBtn.textContent=labels[turn]||'\u25b6\u25b6 Next';
+    }
+  }
+  if(finishBtn) finishBtn.style.display=isLast?'':'none';
+};
+
+var _origConfirmNext = confirmNextFmRound;
+confirmNextFmRound = function(){
+  var activeFM=(QE&&QE.fm)?QE.fm:FM_QUESTIONS;
+  stopTimer();
+  if(FM.turn===0){
+    FM.p1pts[0]=boardPts(0); FM.teamPts[0]=FM.p1pts[0];
+    FM.revealed[0]=activeFM.map(function(q){ return new Array(q.ans.length).fill(false); });
+    FM.turn=1; FM.timerVal=FM_TURN_TIMES[1];
+  } else if(FM.turn===1){
+    FM.teamPts[0]=FM.p1pts[0]+boardPts(0);
+    FM.revealed[1]=activeFM.map(function(q){ return new Array(q.ans.length).fill(false); });
+    FM.turn=2; FM.timerVal=FM_TURN_TIMES[2];
+  } else if(FM.turn===2){
+    FM.p1pts[1]=boardPts(1); FM.teamPts[1]=FM.p1pts[1];
+    FM.revealed[1]=activeFM.map(function(q){ return new Array(q.ans.length).fill(false); });
+    FM.turn=3; FM.timerVal=FM_TURN_TIMES[3];
+  }
+  renderFastMoney();
+};
+
+// Patch awardTo and renderQualBar to work with QE rounds
+var _origAwardTo = awardTo;
+awardTo = function(ti){
+  var key=G.cur+'_'+ti;
+  if(G.awarded.has(key)) return;
+  G.scores[ti]+=G.rndPts;
+  G.awarded.add(key);
+  var ar=(QE&&QE.rounds)?QE.rounds:ROUNDS;
+  _renderHeader(G.cur,ar); renderQualBar(); _renderScores(G.cur,ar);
+};
+
+function toggleRules(){
+  const body    = document.getElementById('rules-body');
+  const chevron = document.getElementById('rules-chevron');
+  const open    = body.classList.toggle('open');
+  chevron.classList.toggle('open', open);
+}
+</script>
+</body>
+</html>
